@@ -69,5 +69,5 @@ def run_timesteps(agent, num_timesteps):
             timesteps += len(agent.trajectory)
 
             agent.trajectory.fix_datatypes()
-            agent.train()
+            agent.learn()
             agent.forget()
