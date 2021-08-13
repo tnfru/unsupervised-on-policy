@@ -3,9 +3,10 @@ import torch as T
 import wandb
 
 from preprocessing import normalize
+from utils import calculate_advantages
 
 
-def run_episode(agent, trajectory=None, render=False):
+def run_episode(agent, trajectory, render=False):
     states = []
     actions = []
     rewards = []
@@ -42,20 +43,23 @@ def run_episode(agent, trajectory=None, render=False):
     if agent.use_wandb:
         wandb.log({'reward': np.sum(rewards)})
 
-    if trajectory is not None:
-        advantages = trajectory.convert_to_advantages(rewards, state_vals,
-                                                      agent.discount_factor)
-        expected_returns = T.tensor(state_vals, dtype=T.float) + advantages
-        advantages = normalize(advantages)
-        trajectory.append_timesteps(states=states,
-                                    actions=actions,
-                                    expected_returns=expected_returns,
-                                    dones=dones,
-                                    log_probs=log_probs,
-                                    advantages=advantages,
-                                    aux_vals=aux_vals,
-                                    log_dists=log_dists)
-        return trajectory
+    if render:
+        return
+
+    advantages = calculate_advantages(rewards,
+                                      state_vals,
+                                      agent.discount_factor)
+    expected_returns = T.tensor(state_vals, dtype=T.float) + advantages
+    advantages = normalize(advantages)
+    trajectory.append_timesteps(states=states,
+                                actions=actions,
+                                expected_returns=expected_returns,
+                                dones=dones,
+                                log_probs=log_probs,
+                                advantages=advantages,
+                                aux_vals=aux_vals,
+                                log_dists=log_dists)
+    return trajectory
 
 
 def run_timesteps(agent, num_timesteps):

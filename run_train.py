@@ -4,9 +4,9 @@ from train import run_timesteps
 
 if __name__ == '__main__':
     config = {'clip_ratio': 0.25,
-              'kl_max': 0.01,
+              'kl_max': 0.06,
               'beta': 1,
-              'val_coeff': 1e-5,
+              'val_coeff': 1e-2,
               'aux_iterations': 3,
               'rollout_length': 256,
               'train_iterations': 1,
@@ -15,6 +15,7 @@ if __name__ == '__main__':
               'critic_lr': 1e-3,
               'actor_lr': 3e-4,
               'batch_size': 64,
+              'value_clip': 0.4,
               'use_wandb': True
               }
 

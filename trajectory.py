@@ -57,17 +57,3 @@ class Trajectory(T.utils.data.Dataset):
             return state, expected_return, log_dist, aux_val
         else:
             return state, action, expected_return, log_prob, advantage
-
-    def convert_to_advantages(self, rewards, state_vals, discount_factor,
-                              gae_lambda=0.95):
-        advantages = []
-        advantage = 0
-        next_state_value = 0
-
-        for reward, state_val in zip(reversed(rewards), reversed(state_vals)):
-            td_error = reward + discount_factor * next_state_value - state_val
-            advantage = td_error + discount_factor * gae_lambda * advantage
-            next_state_value = state_val
-            advantages.insert(0, advantage)
-
-        return T.tensor(advantages, dtype=T.float)

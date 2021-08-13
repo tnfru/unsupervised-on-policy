@@ -1,13 +1,13 @@
 import wandb
 import torch as T
-import torch.nn.functional as F
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.distributions.categorical import Categorical
 
 from networks import PPG, CriticNet
-from preprocessing import approx_kl_div
+from utils import approx_kl_div
 from trajectory import Trajectory
 from utils import clipped_value_loss
 
@@ -37,6 +37,7 @@ class Agent:
         self.trajectory = Trajectory()
         self.beta = config['beta']
         self.use_wandb = config['use_wandb']
+        self.value_clip = config['value_clip']
         self.aux_freq = 32
         self.steps = 0
 
@@ -138,7 +139,8 @@ class Agent:
         if kl_div < self.kl_max:
             aux_value_loss = clipped_value_loss(aux_values,
                                                 expected_returns,
-                                                old_aux_value)
+                                                old_aux_value,
+                                                self.value_clip)
 
             aux_loss = self.val_coeff * aux_value_loss + kl_div * self.beta
             self.actor_opt.zero_grad()
