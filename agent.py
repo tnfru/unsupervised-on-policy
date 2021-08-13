@@ -1,7 +1,6 @@
 import wandb
 import torch as T
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.distributions.categorical import Categorical
@@ -38,6 +37,7 @@ class Agent:
         self.beta = config['beta']
         self.use_wandb = config['use_wandb']
         self.value_clip = config['value_clip']
+        self.entropy_decay = config['entropy_decay']
         self.aux_freq = 32
         self.steps = 0
 
@@ -49,19 +49,17 @@ class Agent:
             wandb.run.name = 'PPG_' + wandb.run.name
 
     def get_action(self, state):
-        action_probs, aux_value = self.actor(state)
+        with T.no_grad():
+            action_probs, aux_value = self.actor(state)
 
-        action_dist = Categorical(logits=action_probs)
-        action = action_dist.sample()
-        log_prob = action_dist.log_prob(action).item()
+            action_dist = Categorical(logits=action_probs)
+            action = action_dist.sample()
+            log_prob = action_dist.log_prob(action).item()
+            log_dist = action_dist.probs.log().cpu().detach()
 
-        return action.item(), log_prob, aux_value.item(), action_dist.probs.log(
-        ).cpu().detach()
+            return action.item(), log_prob, aux_value.item(), log_dist
 
-    def train_ppo_epoch(self):
-        loader = DataLoader(self.trajectory, batch_size=self.batch_size,
-                            shuffle=True, pin_memory=True)
-
+    def train_ppo_epoch(self, loader):
         for states, actions, expected_returns, log_probs, advantages in \
                 loader:
             states = states.to(self.device)
@@ -84,6 +82,8 @@ class Agent:
 
         if kl_div > self.kl_max:
             # If KL divergence is too big we don't take gradient steps
+            if self.use_wandb:
+                wandb.log({'kl_exceeded': 1})
             return
 
         entropy_loss = action_dist.entropy().mean() * self.entropy_coeff
@@ -103,22 +103,26 @@ class Agent:
 
         if self.use_wandb:
             wandb.log({'entropy': entropy_loss,
-                       'kl div': kl_div.mean()})
+                       'kl div': kl_div.mean(),
+                       'kl_exceeded': 0})
 
     def learn(self):
         for epoch in range(self.train_iterations):
-            self.train_ppo_epoch()
+            loader = DataLoader(self.trajectory, batch_size=self.batch_size,
+                                shuffle=True, pin_memory=True)
+            self.train_ppo_epoch(loader)
+            self.entropy_coeff *= self.entropy_decay
             self.steps += 1
 
         if self.steps == self.aux_freq:
             self.steps = 0
             for aux_epoch in range(self.aux_iterations):
-                self.train_aux_epoch()
+                loader = DataLoader(self.trajectory, batch_size=self.batch_size,
+                                    shuffle=True, pin_memory=True)
+                self.train_aux_epoch(loader)
 
-    def train_aux_epoch(self):
+    def train_aux_epoch(self, loader):
         self.trajectory.is_aux_epoch = True
-        loader = DataLoader(self.trajectory, batch_size=self.batch_size,
-                            shuffle=True, pin_memory=True)
 
         for states, expected_returns, log_dists, aux_vals in loader:
             expected_returns = expected_returns.to(self.device).unsqueeze(1)
@@ -136,23 +140,28 @@ class Agent:
         action_dist = Categorical(logits=action_probs)
         kl_div = approx_kl_div(action_dist.probs.log(), old_log_probs)
 
-        if kl_div < self.kl_max:
-            aux_value_loss = clipped_value_loss(aux_values,
-                                                expected_returns,
-                                                old_aux_value,
-                                                self.value_clip)
-
-            aux_loss = self.val_coeff * aux_value_loss + kl_div * self.beta
-            self.actor_opt.zero_grad()
-            nn.utils.clip_grad_norm_(self.actor.parameters(),
-                                     self.grad_norm)
-            aux_loss.backward()
-            self.actor_opt.step()
-
+        if kl_div > self.kl_max:
+            # If KL divergence is too big we don't take gradient steps
             if self.use_wandb:
-                wandb.log({'aux state value': aux_values.mean(),
-                           'aux loss': aux_loss.mean(),
-                           'aux kl_div': kl_div})
+                wandb.log({'kl_exceeded': 1})
+            return
+
+        aux_value_loss = clipped_value_loss(aux_values,
+                                            expected_returns,
+                                            old_aux_value,
+                                            self.value_clip)
+
+        aux_loss = self.val_coeff * aux_value_loss + kl_div * self.beta
+        self.actor_opt.zero_grad()
+        nn.utils.clip_grad_norm_(self.actor.parameters(),
+                                 self.grad_norm)
+        aux_loss.backward()
+        self.actor_opt.step()
+
+        if self.use_wandb:
+            wandb.log({'aux state value': aux_values.mean(),
+                       'aux loss': aux_loss.mean(),
+                       'aux kl_div': kl_div})
 
     def train_critic(self, states, expected_returns):
         state_values = self.critic(states)

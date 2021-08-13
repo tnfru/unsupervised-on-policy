@@ -3,8 +3,9 @@ from agent import Agent
 from train import run_timesteps
 
 if __name__ == '__main__':
+    num_timesteps = int(1e7)
     config = {'clip_ratio': 0.25,
-              'kl_max': 0.06,
+              'kl_max': 0.02,
               'beta': 1,
               'val_coeff': 1e-2,
               'aux_iterations': 3,
@@ -16,6 +17,7 @@ if __name__ == '__main__':
               'actor_lr': 3e-4,
               'batch_size': 64,
               'value_clip': 0.4,
+              'entropy_decay': 0.995,
               'use_wandb': True
               }
 
@@ -28,4 +30,4 @@ if __name__ == '__main__':
     env = gym.make("CartPole-v2000")
     agent = Agent(env, 2, 4, config=config)
 
-    run_timesteps(agent, 1e7)
+    run_timesteps(agent, num_timesteps)

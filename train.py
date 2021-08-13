@@ -43,7 +43,7 @@ def run_episode(agent, trajectory, render=False):
     if agent.use_wandb:
         wandb.log({'reward': np.sum(rewards)})
 
-    if render:
+    if render:  # If run for visualization no need to do backprop
         return
 
     advantages = calculate_advantages(rewards,
@@ -63,14 +63,14 @@ def run_episode(agent, trajectory, render=False):
 
 
 def run_timesteps(agent, num_timesteps):
-    timesteps = 0
+    timestep = 0
     agent.forget()
 
-    while timesteps < num_timesteps:
+    while timestep < num_timesteps:
         agent.trajectory = run_episode(agent, agent.trajectory)
 
         if len(agent.trajectory) >= agent.rollout_length:
-            timesteps += len(agent.trajectory)
+            timestep += len(agent.trajectory)
 
             agent.trajectory.fix_datatypes()
             agent.learn()
