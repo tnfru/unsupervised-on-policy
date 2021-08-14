@@ -15,9 +15,11 @@ if __name__ == '__main__':
               'grad_norm': 0.5,
               'critic_lr': 1e-3,
               'actor_lr': 3e-4,
+              'aux_freq': 32,
+              'gae_lambda': 0.95,
               'batch_size': 64,
               'value_clip': 0.4,
-              'entropy_decay': 0.995,
+              'entropy_decay': 0.999,
               'use_wandb': True
               }
 

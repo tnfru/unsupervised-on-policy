@@ -43,12 +43,13 @@ def run_episode(agent, trajectory, render=False):
     if agent.use_wandb:
         wandb.log({'reward': np.sum(rewards)})
 
-    if render:  # If run for visualization no need to do backprop
+    if render:  # If run for visualization no need to do learning
         return
 
     advantages = calculate_advantages(rewards,
                                       state_vals,
-                                      agent.discount_factor)
+                                      agent.discount_factor,
+                                      agent.gae_lambda)
     expected_returns = T.tensor(state_vals, dtype=T.float) + advantages
     advantages = normalize(advantages)
     trajectory.append_timesteps(states=states,
@@ -58,7 +59,8 @@ def run_episode(agent, trajectory, render=False):
                                 log_probs=log_probs,
                                 advantages=advantages,
                                 aux_vals=aux_vals,
-                                log_dists=log_dists)
+                                log_dists=log_dists,
+                                state_vals=state_vals)
     return trajectory
 
 

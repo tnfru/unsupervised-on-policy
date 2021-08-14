@@ -11,13 +11,15 @@ class Trajectory(T.utils.data.Dataset):
         self.advantages = []
         self.aux_state_values = []
         self.log_dists = []
+        self.state_vals = []
         self.is_aux_epoch = False
 
     def __len__(self):
         return len(self.states)
 
     def append_timesteps(self, states, actions, expected_returns, dones,
-                         log_probs, advantages, aux_vals, log_dists):
+                         log_probs, advantages, aux_vals, log_dists,
+                         state_vals):
         self.states.extend(states)
         self.actions.extend(actions)
         self.expected_returns.extend(expected_returns)
@@ -26,6 +28,7 @@ class Trajectory(T.utils.data.Dataset):
         self.advantages.extend(advantages)
         self.aux_state_values.extend(aux_vals)
         self.log_dists.extend(log_dists)
+        self.state_vals.extend(state_vals)
 
     def fix_datatypes(self):
         self.states = T.stack(self.states)
@@ -45,15 +48,17 @@ class Trajectory(T.utils.data.Dataset):
 
     def __getitem__(self, index):
         state = self.states[index]
-        action = self.actions[index]
         expected_return = self.expected_returns[index]
-        # done = self.dones[index] not required by any loop
-        log_prob = self.log_probs[index]
-        advantage = self.advantages[index]
-        aux_val = self.aux_state_values[index]
         log_dist = self.log_dists[index]
+        state_val = self.state_vals[index]
+        advantage = self.advantages[index]
+        # done = self.dones[index] not required by any loop
 
         if self.is_aux_epoch:
-            return state, expected_return, log_dist, aux_val
+            aux_val = self.aux_state_values[index]
+            return state, expected_return, state_val, aux_val, advantage, \
+                   log_dist
         else:
-            return state, action, expected_return, log_prob, advantage
+            action = self.actions[index]
+            log_prob = self.log_probs[index]
+            return state, action, expected_return, state_val, advantage, log_prob

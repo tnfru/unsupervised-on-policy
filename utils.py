@@ -2,20 +2,19 @@ import torch as T
 from torch.nn import functional as F
 
 
-def clipped_value_loss(aux_values, expected_returns, old_values_aux, clip):
+def clipped_value_loss(state_values, old_state_values, expected_returns, clip):
     # TODO explain case in which this is used
-    value_clipped = old_values_aux + T.clamp(aux_values - old_values_aux,
-                                             -clip, clip)
-    clipped_td_error = T.square(expected_returns - value_clipped)
-    td_error = T.square(aux_values - expected_returns)
+    value_clipped = old_state_values + (state_values - old_state_values).clamp(
+        -clip, clip)
+    clipped_loss = T.square(value_clipped - expected_returns)
+    mse_loss = T.square(expected_returns - expected_returns)
 
-    loss = T.max(clipped_td_error, td_error).mean()
+    loss = T.max(clipped_loss, mse_loss).mean()
 
     return loss
 
 
-def calculate_advantages(rewards, state_vals, discount_factor,
-                         gae_lambda=0.95):
+def calculate_advantages(rewards, state_vals, discount_factor, gae_lambda):
     advantages = []
     advantage = 0
     next_state_value = 0
