@@ -50,7 +50,7 @@ class Agent:
             wandb.init(project="cartpole", config=config)
             wandb.watch(self.actor, log="all")
             wandb.watch(self.critic, log="all")
-            wandb.run.name = 'all_clipped_' + wandb.run.name
+            wandb.run.name = 'fixed_aux_rets_' + wandb.run.name
 
     def get_action(self, state):
         with T.no_grad():
@@ -131,11 +131,11 @@ class Agent:
     def train_aux_epoch(self, loader):
         self.trajectory.is_aux_epoch = True
 
-        for states, expected_returns, state_vals, aux_vals, log_dists in loader:
+        for states, expected_returns, aux_rets, state_vals, aux_vals, log_dists in loader:
             expected_returns = expected_returns.to(self.device).unsqueeze(1)
             states = states.to(self.device)
 
-            self.train_aux_net(states, expected_returns, log_dists, aux_vals)
+            self.train_aux_net(states, aux_rets, log_dists, aux_vals)
             self.train_critic(states, expected_returns, state_vals)
 
         self.trajectory.is_aux_epoch = False
@@ -195,7 +195,7 @@ class Agent:
                        'critic state value': state_values.mean()})
 
     def critic_loss_fun(self, state_values, old_state_values, expected_returns):
-        if self.value_clip is not None:
+        if self.value_clip is not None and self.trajectory.is_aux_epoch:
             critic_loss = clipped_value_loss(state_values,
                                              old_state_values,
                                              expected_returns,

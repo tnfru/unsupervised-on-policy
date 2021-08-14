@@ -51,6 +51,11 @@ def run_episode(agent, trajectory, render=False):
                                       agent.discount_factor,
                                       agent.gae_lambda)
     expected_returns = T.tensor(state_vals, dtype=T.float) + advantages
+    aux_advantages = calculate_advantages(rewards,
+                                          aux_vals,
+                                          agent.discount_factor,
+                                          agent.gae_lambda)
+    aux_rets = T.tensor(aux_vals, dtype=T.float) + aux_advantages
     advantages = normalize(advantages)
     trajectory.append_timesteps(states=states,
                                 actions=actions,
@@ -60,7 +65,8 @@ def run_episode(agent, trajectory, render=False):
                                 advantages=advantages,
                                 aux_vals=aux_vals,
                                 log_dists=log_dists,
-                                state_vals=state_vals)
+                                state_vals=state_vals,
+                                aux_rets=aux_rets)
     return trajectory
 
 

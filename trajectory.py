@@ -12,6 +12,7 @@ class Trajectory(T.utils.data.Dataset):
         self.aux_state_values = []
         self.log_dists = []
         self.state_vals = []
+        self.aux_rets = []
         self.is_aux_epoch = False
 
     def __len__(self):
@@ -19,7 +20,7 @@ class Trajectory(T.utils.data.Dataset):
 
     def append_timesteps(self, states, actions, expected_returns, dones,
                          log_probs, advantages, aux_vals, log_dists,
-                         state_vals):
+                         state_vals, aux_rets):
         self.states.extend(states)
         self.actions.extend(actions)
         self.expected_returns.extend(expected_returns)
@@ -29,6 +30,7 @@ class Trajectory(T.utils.data.Dataset):
         self.aux_state_values.extend(aux_vals)
         self.log_dists.extend(log_dists)
         self.state_vals.extend(state_vals)
+        self.aux_rets.extend(aux_rets)
 
     def fix_datatypes(self):
         self.states = T.stack(self.states)
@@ -45,6 +47,8 @@ class Trajectory(T.utils.data.Dataset):
         self.dones = []
         self.advantages = []
         self.log_dists = []
+        self.state_vals = []
+        self.aux_rets = []
 
     def __getitem__(self, index):
         state = self.states[index]
@@ -56,7 +60,8 @@ class Trajectory(T.utils.data.Dataset):
 
         if self.is_aux_epoch:
             aux_val = self.aux_state_values[index]
-            return state, expected_return, state_val, aux_val, advantage, \
+            aux_ret = self.aux_rets[index]
+            return state, expected_return, aux_ret, state_val, aux_val, \
                    log_dist
         else:
             action = self.actions[index]
