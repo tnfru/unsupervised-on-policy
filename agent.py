@@ -1,8 +1,6 @@
-import wandb
-import warnings
+import torch
 import torch as T
 
-import torch.nn.functional as F
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
@@ -12,6 +10,7 @@ from networks import PPG, CriticNet
 from logger import *
 from utils import approx_kl_div
 from trajectory import Trajectory
+from utils import data_to_device
 from utils import value_loss_fun
 
 
@@ -36,7 +35,7 @@ class Agent:
         self.AUX_WARN_THRESHOLD = 100
 
         if self.use_wandb:
-            prefix = 'refactor'
+            prefix = 'relu'
             init_logging(config, self.actor, self.critic, prefix)
 
     def get_action(self, state):
@@ -51,14 +50,10 @@ class Agent:
             return action.item(), log_prob, aux_value.item(), log_dist
 
     def train_ppo_epoch(self, loader):
-        for states, actions, expected_returns, state_vals, advantages, log_probs \
-                in loader:
-            states = states.to(self.device)
-            actions = actions.to(self.device)
-            advantages = advantages.to(self.device)
-            log_probs = log_probs.to(self.device)
-            state_vals = state_vals.to(self.device)
-            expected_returns = expected_returns.to(self.device).unsqueeze(1)
+        for rollout_data in loader:
+            states, actions, expected_returns, state_vals, advantages, \
+            log_probs = data_to_device(rollout_data, self.device)
+            expected_returns = expected_returns.unsqueeze(1)
 
             self.train_policy_net(states, actions, log_probs, advantages)
             self.train_critic(states, expected_returns, state_vals)
@@ -85,7 +80,7 @@ class Agent:
                                   retain_graph=True)
 
         if self.use_wandb:
-            log_ppo_epoch(entropy_loss, kl_div, config['kl_max'])
+            log_ppo(entropy_loss, kl_div, config['kl_max'])
 
     def do_gradient_step(self, network, optimizer, objective,
                          retain_graph=False):
@@ -125,13 +120,11 @@ class Agent:
     def train_aux_epoch(self, loader):
         self.trajectory.is_aux_epoch = True
 
-        for states, expected_returns, aux_rets, state_vals, aux_vals, log_dists in loader:
-            expected_returns = expected_returns.to(self.device).unsqueeze(1)
-            states = states.to(self.device)
-            aux_rets = aux_rets.to(self.device)
-            state_vals = state_vals.to(self.device)
-            aux_vals = aux_vals.to(self.device)
-            log_dists = log_dists.to(self.device)
+        for rollout_data in loader:
+            states, expected_returns, aux_rets, state_vals, aux_vals, \
+            log_dists = data_to_device(rollout_data, self.device)
+            expected_returns = expected_returns.unsqueeze(1)
+            aux_rets = aux_rets.unsqueeze(1)
 
             self.train_aux_net(states, aux_rets, log_dists, aux_vals)
             self.train_critic(states, expected_returns, state_vals)
@@ -145,9 +138,9 @@ class Agent:
         action_dist = Categorical(logits=action_probs)
         kl_div = approx_kl_div(action_dist.probs.log(), old_log_probs)
 
-        aux_value_loss = value_loss_fun(aux_values,
-                                        old_aux_value,
-                                        expected_returns,
+        aux_value_loss = value_loss_fun(state_values=aux_values,
+                                        old_state_values=old_aux_value,
+                                        expected_returns=expected_returns,
                                         is_aux_epoch=True,
                                         value_clip=config['value_clip'])
         aux_value_loss *= config['val_coeff']
@@ -167,8 +160,9 @@ class Agent:
     def train_critic(self, states, expected_returns, old_state_values):
         config = self.config
         state_values = self.critic(states)
-        critic_loss = value_loss_fun(state_values, old_state_values,
-                                     expected_returns,
+        critic_loss = value_loss_fun(state_values=state_values,
+                                     old_state_values=old_state_values,
+                                     expected_returns=expected_returns,
                                      is_aux_epoch=self.trajectory.is_aux_epoch,
                                      value_clip=config['value_clip'])
 

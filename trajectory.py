@@ -39,17 +39,6 @@ class Trajectory(T.utils.data.Dataset):
         self.log_probs = T.tensor(self.log_probs, dtype=T.float)
         self.log_dists = T.stack(self.log_dists)
 
-    def clear_memory(self):
-        self.states = []
-        self.log_probs = []
-        self.actions = []
-        self.expected_returns = []
-        self.dones = []
-        self.advantages = []
-        self.log_dists = []
-        self.state_vals = []
-        self.aux_rets = []
-
     def __getitem__(self, index):
         state = self.states[index]
         expected_return = self.expected_returns[index]

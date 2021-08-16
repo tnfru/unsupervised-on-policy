@@ -10,7 +10,7 @@ def init_logging(config, actor, critic, prefix):
     wandb.run.name = prefix + '_' + wandb.run.name
 
 
-def log_ppo_epoch(entropy_loss, kl_div, kl_max):
+def log_ppo(entropy_loss, kl_div, kl_max):
     exceeded = 1 if kl_div > kl_max else 0
     wandb.log({'entropy loss': entropy_loss,
                'kl div': kl_div.mean(),
