@@ -1,10 +1,10 @@
 import gym
 from agent import Agent
-from train import run_timesteps
+from rollout import run_timesteps
 
 if __name__ == '__main__':
     num_timesteps = int(1e7)
-    config = {'clip_ratio': 0.25,
+    config = {'policy_clip': 0.25,
               'kl_max': 0.02,
               'beta': 1,
               'val_coeff': 1e-2,
