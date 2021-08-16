@@ -27,6 +27,15 @@ def approx_kl_div(log_probs, old_log_probs, ratio=None):
         return kl_div.mean()
 
 
+def do_gradient_step(network, optimizer, objective, grad_norm,
+                     retain_graph=False):
+    optimizer.zero_grad()
+    if grad_norm is not None:
+        T.nn.utils.clip_grad_norm_(network.parameters(), grad_norm)
+    objective.backward(retain_graph=retain_graph)
+    optimizer.step()
+
+
 def data_to_device(rollout_data, device):
     data_on_device = []
     for data in rollout_data:
