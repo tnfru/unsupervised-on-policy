@@ -20,7 +20,8 @@ if __name__ == '__main__':
               'batch_size': 64,
               'value_clip': 0.4,
               'entropy_decay': 0.999,
-              'use_wandb': True
+              'use_wandb': True,
+              'discount_factor': 0.99
               }
 
     gym.envs.register(

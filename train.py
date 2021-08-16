@@ -46,15 +46,16 @@ def run_episode(agent, trajectory, render=False):
     if render:  # If run for visualization no need to do learning
         return
 
+    config = agent.config
     advantages = calculate_advantages(rewards,
                                       state_vals,
-                                      agent.discount_factor,
-                                      agent.gae_lambda)
+                                      config['discount_factor'],
+                                      config['gae_lambda'])
     expected_returns = T.tensor(state_vals, dtype=T.float) + advantages
     aux_advantages = calculate_advantages(rewards,
                                           aux_vals,
-                                          agent.discount_factor,
-                                          agent.gae_lambda)
+                                          config['discount_factor'],
+                                          config['gae_lambda'])
     aux_rets = T.tensor(aux_vals, dtype=T.float) + aux_advantages
     advantages = normalize(advantages)
     trajectory.append_timesteps(states=states,
@@ -77,7 +78,7 @@ def run_timesteps(agent, num_timesteps):
     while timestep < num_timesteps:
         agent.trajectory = run_episode(agent, agent.trajectory)
 
-        if len(agent.trajectory) >= agent.rollout_length:
+        if len(agent.trajectory) >= agent.config['rollout_length']:
             timestep += len(agent.trajectory)
 
             agent.trajectory.fix_datatypes()

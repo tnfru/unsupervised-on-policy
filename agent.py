@@ -9,9 +9,10 @@ from torch.utils.data import DataLoader
 from torch.distributions.categorical import Categorical
 
 from networks import PPG, CriticNet
+from logger import *
 from utils import approx_kl_div
 from trajectory import Trajectory
-from utils import clipped_value_loss
+from utils import value_loss_fun
 
 
 class Agent:
@@ -19,7 +20,6 @@ class Agent:
         self.env = env
         self.actor = PPG(action_dim, state_dim)
         self.critic = CriticNet(state_dim)
-        self.discount_factor = 0.99
         self.batch_size = config['batch_size']
         self.policy_clip = config['clip_ratio']
         self.actor_opt = optim.Adam(self.actor.parameters(),
@@ -28,29 +28,16 @@ class Agent:
                                      lr=config['critic_lr'])
         self.device = T.device(
             'cuda:0' if T.cuda.is_available() else 'cpu')
-        self.train_iterations = config['train_iterations']
-        self.aux_iterations = config['aux_iterations']
-        self.rollout_length = config['rollout_length']
+        self.config = config
         self.entropy_coeff = config['entropy_coeff']
-        self.kl_max = config['kl_max']
-        self.val_coeff = config['val_coeff']
-        self.grad_norm = config['grad_norm']
         self.trajectory = Trajectory()
-        self.beta = config['beta']
         self.use_wandb = config['use_wandb']
-        self.value_clip = config['value_clip']
-        self.entropy_decay = config['entropy_decay']
-        self.aux_freq = config['aux_freq']
-        self.gae_lambda = config['gae_lambda']
         self.steps = 0
         self.AUX_WARN_THRESHOLD = 100
 
         if self.use_wandb:
-            # initialize logging
-            wandb.init(project="cartpole", config=config)
-            wandb.watch(self.actor, log="all")
-            wandb.watch(self.critic, log="all")
-            wandb.run.name = 'fixed_aux_rets_' + wandb.run.name
+            prefix = 'refactor'
+            init_logging(config, self.actor, self.critic, prefix)
 
     def get_action(self, state):
         with T.no_grad():
@@ -64,9 +51,8 @@ class Agent:
             return action.item(), log_prob, aux_value.item(), log_dist
 
     def train_ppo_epoch(self, loader):
-        for states, actions, expected_returns, state_vals, advantages, \
-            log_probs in \
-                loader:
+        for states, actions, expected_returns, state_vals, advantages, log_probs \
+                in loader:
             states = states.to(self.device)
             actions = actions.to(self.device)
             advantages = advantages.to(self.device)
@@ -77,55 +63,63 @@ class Agent:
             self.train_policy_net(states, actions, log_probs, advantages)
             self.train_critic(states, expected_returns, state_vals)
 
-    def train_policy_net(self, states, actions, log_probs, advantages):
+    def train_policy_net(self, states, actions, old_log_probs, advantages):
+        config = self.config
         action_probs, _ = self.actor(states)
         action_dist = Categorical(logits=action_probs)
-        new_log_probs = action_dist.log_prob(actions)
+        log_probs = action_dist.log_prob(actions)
+
+        entropy_loss = -action_dist.entropy().mean() * self.entropy_coeff
+        # entropy for exploration
+
         # log trick for efficient computational graph during backprop
-        ratio = T.exp(new_log_probs - log_probs)
+        ratio = T.exp(log_probs - old_log_probs)
+        kl_div = approx_kl_div(log_probs, old_log_probs, ratio)
 
-        kl_div = approx_kl_div(new_log_probs, log_probs, ratio)
+        ppo_objective = self.calculate_ppo_objective(advantages, ratio)
+        objective = ppo_objective + entropy_loss
 
-        if kl_div > self.kl_max:
+        if kl_div < config['kl_max']:
             # If KL divergence is too big we don't take gradient steps
-            if self.use_wandb:
-                wandb.log({'kl_exceeded': 1,
-                           'kl div': kl_div.mean()})
-            return
-
-        entropy_loss = action_dist.entropy().mean() * self.entropy_coeff
-        # add entropy for exploration
-
-        weighted_objective = advantages * ratio
-        clipped_objective = ratio.clamp(1 - self.policy_clip,
-                                        1 + self.policy_clip) * advantages
-        objective = -T.min(weighted_objective,
-                           clipped_objective).mean() - entropy_loss
-
-        self.actor_opt.zero_grad()
-        nn.utils.clip_grad_norm_(self.actor.parameters(),
-                                 self.grad_norm)
-        objective.backward(retain_graph=True)
-        self.actor_opt.step()
+            self.do_gradient_step(self.actor, self.actor_opt, objective,
+                                  retain_graph=True)
 
         if self.use_wandb:
-            wandb.log({'entropy': entropy_loss,
-                       'kl div': kl_div.mean(),
-                       'kl_exceeded': 0})
+            log_ppo_epoch(entropy_loss, kl_div, config['kl_max'])
+
+    def do_gradient_step(self, network, optimizer, objective,
+                         retain_graph=False):
+        config = self.config
+        optimizer.zero_grad()
+        if config['grad_norm'] is not None:
+            nn.utils.clip_grad_norm_(network.parameters(),
+                                     config['grad_norm'])
+        objective.backward(retain_graph=retain_graph)
+        optimizer.step()
+
+    def calculate_ppo_objective(self, advantages, ratio):
+        weighted_objective = ratio * advantages
+        clipped_objective = ratio.clamp(1 - self.policy_clip,
+                                        1 + self.policy_clip) * advantages
+        ppo_objective = -T.min(weighted_objective,
+                               clipped_objective).mean()
+        return ppo_objective
 
     def learn(self):
-        for epoch in range(self.train_iterations):
-            loader = DataLoader(self.trajectory, batch_size=self.batch_size,
-                                shuffle=True, pin_memory=True)
+        config = self.config
+        for epoch in range(config['train_iterations']):
+            loader = DataLoader(self.trajectory, batch_size=config[
+                'batch_size'], shuffle=True, pin_memory=True)
             self.train_ppo_epoch(loader)
-            self.entropy_coeff *= self.entropy_decay
+            self.entropy_coeff *= config['entropy_decay']
             self.steps += 1
 
-        if self.steps == self.aux_freq:
+        if self.steps == config['aux_freq']:
             self.steps = 0
-            loader = DataLoader(self.trajectory, batch_size=self.batch_size,
-                                shuffle=True, pin_memory=True)
-            for aux_epoch in range(self.aux_iterations):
+            loader = DataLoader(self.trajectory, batch_size=config[
+                'batch_size'], shuffle=True, pin_memory=True)
+
+            for aux_epoch in range(config['aux_iterations']):
                 self.train_aux_epoch(loader)
 
     def train_aux_epoch(self, loader):
@@ -134,6 +128,10 @@ class Agent:
         for states, expected_returns, aux_rets, state_vals, aux_vals, log_dists in loader:
             expected_returns = expected_returns.to(self.device).unsqueeze(1)
             states = states.to(self.device)
+            aux_rets = aux_rets.to(self.device)
+            state_vals = state_vals.to(self.device)
+            aux_vals = aux_vals.to(self.device)
+            log_dists = log_dists.to(self.device)
 
             self.train_aux_net(states, aux_rets, log_dists, aux_vals)
             self.train_critic(states, expected_returns, state_vals)
@@ -142,68 +140,42 @@ class Agent:
 
     def train_aux_net(self, states, expected_returns, old_log_probs,
                       old_aux_value):
-
+        config = self.config
         action_probs, aux_values = self.actor(states)
         action_dist = Categorical(logits=action_probs)
         kl_div = approx_kl_div(action_dist.probs.log(), old_log_probs)
 
-        if kl_div > self.kl_max:
-            # If KL divergence is too big we don't take gradient steps
-            if self.use_wandb:
-                wandb.log({'kl_exceeded': 1,
-                           'kl div': kl_div.mean()})
-            return
+        aux_value_loss = value_loss_fun(aux_values,
+                                        old_aux_value,
+                                        expected_returns,
+                                        is_aux_epoch=True,
+                                        value_clip=config['value_clip'])
+        aux_value_loss *= config['val_coeff']
 
-        if self.value_clip is not None:
-            aux_value_loss = self.val_coeff * clipped_value_loss(aux_values,
-                                                                 old_aux_value,
-                                                                 expected_returns,
-                                                                 self.value_clip)
-        else:
-            aux_value_loss = self.val_coeff * F.mse_loss(aux_values,
-                                                         expected_returns)
         if aux_value_loss > self.AUX_WARN_THRESHOLD:
-            warnings.warn(f'Aux Loss has value {aux_value_loss}. Consider '
-                          f'scaling val_coeff down to not disrupt policy '
-                          f'learning')
+            warn_about_aux_loss_scaling(aux_value_loss)
 
-        aux_loss = aux_value_loss + kl_div * self.beta
-        self.actor_opt.zero_grad()
-        nn.utils.clip_grad_norm_(self.actor.parameters(),
-                                 self.grad_norm)
-        aux_loss.backward()
-        self.actor_opt.step()
+        aux_loss = aux_value_loss + kl_div * config['beta']
+
+        if kl_div < config['kl_max']:
+            # If KL divergence is too big we don't take gradient steps
+            self.do_gradient_step(self.actor, self.actor_opt, aux_loss)
 
         if self.use_wandb:
-            wandb.log({'aux state value': aux_values.mean(),
-                       'aux loss': aux_loss.mean(),
-                       'aux kl_div': kl_div})
+            log_aux(aux_values, aux_loss, kl_div, config['kl_max'])
 
     def train_critic(self, states, expected_returns, old_state_values):
+        config = self.config
         state_values = self.critic(states)
-        critic_loss = self.critic_loss_fun(state_values, old_state_values,
-                                           expected_returns)
+        critic_loss = value_loss_fun(state_values, old_state_values,
+                                     expected_returns,
+                                     is_aux_epoch=self.trajectory.is_aux_epoch,
+                                     value_clip=config['value_clip'])
 
-        self.critic_opt.zero_grad()
-        nn.utils.clip_grad_norm_(self.critic.parameters(),
-                                 self.grad_norm)
-        critic_loss.backward()
-        self.critic_opt.step()
+        self.do_gradient_step(self.critic, self.critic_opt, critic_loss)
 
         if self.use_wandb:
-            wandb.log({'critic loss': critic_loss.mean(),
-                       'critic state value': state_values.mean()})
-
-    def critic_loss_fun(self, state_values, old_state_values, expected_returns):
-        if self.value_clip is not None and self.trajectory.is_aux_epoch:
-            critic_loss = clipped_value_loss(state_values,
-                                             old_state_values,
-                                             expected_returns,
-                                             self.value_clip)
-        else:
-            critic_loss = F.mse_loss(state_values, expected_returns)
-
-        return critic_loss
+            log_critic(critic_loss, state_values)
 
     def forget(self):
         self.trajectory = Trajectory()
