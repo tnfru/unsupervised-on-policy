@@ -2,15 +2,6 @@ import torch as T
 from torch.nn import functional as F
 
 
-def ppo_objective(advantages, ratio, policy_clip):
-    weighted_objective = ratio * advantages
-    clipped_objective = ratio.clamp(1 - policy_clip,
-                                    1 + policy_clip) * advantages
-    loss = -T.min(weighted_objective, clipped_objective).mean()
-
-    return loss
-
-
 def clipped_value_loss(state_values, old_state_values, expected_returns, clip):
     clipped_difference = (state_values - old_state_values).clamp(-clip, clip)
     value_clipped = old_state_values + clipped_difference
@@ -35,6 +26,3 @@ def value_loss_fun(state_values, old_state_values, expected_returns,
     return loss
 
 
-def entropy_objective(action_distribution, entropy_coeff):
-    entropy_loss = -action_distribution.entropy().mean() * entropy_coeff
-    return entropy_loss

@@ -2,7 +2,6 @@ import torch as T
 from torch.distributions.categorical import Categorical
 
 from utils import data_to_device, approx_kl_div, do_gradient_step
-from objectives import ppo_objective, entropy_objective
 from logger import log_ppo
 from critic_train import train_critic
 
@@ -32,7 +31,8 @@ def train_ppo(agent, states, actions, old_log_probs, advantages):
 
     objective = ppo_loss + entropy_loss
 
-    kl_div = approx_kl_div(log_probs, old_log_probs, ratio)
+    kl_div = approx_kl_div(log_probs, old_log_probs, ratio, is_aux=False)
+
     if kl_div < config['kl_max']:
         # If KL divergence is too big we don't take gradient steps
         do_gradient_step(agent.actor, agent.actor_opt, objective,
@@ -40,3 +40,23 @@ def train_ppo(agent, states, actions, old_log_probs, advantages):
 
     if agent.use_wandb:
         log_ppo(entropy_loss, kl_div, config['kl_max'])
+
+
+# Both objectives flip the sign to turn their objective into a loss
+# This is because we want to do gradient ascent on the objectives, but
+# optimizers in PyTorch generally do gradient descent
+
+
+def ppo_objective(advantages, ratio, policy_clip):
+    weighted_objective = ratio * advantages
+    clipped_objective = ratio.clamp(1 - policy_clip,
+                                    1 + policy_clip) * advantages
+    ppo_loss = -T.min(weighted_objective, clipped_objective).mean()
+
+    return ppo_loss
+
+
+def entropy_objective(action_distribution, entropy_coeff):
+    entropy_loss = action_distribution.entropy().mean() * entropy_coeff
+
+    return -entropy_loss

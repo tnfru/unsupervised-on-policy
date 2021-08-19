@@ -15,14 +15,22 @@ def calculate_advantages(rewards, state_vals, discount_factor, gae_lambda):
     return T.tensor(advantages, dtype=T.float)
 
 
-def approx_kl_div(log_probs, old_log_probs, ratio=None):
+def approx_kl_div(log_probs, old_log_probs, ratio=None, is_aux=False):
     # See Josh Schulmans Blogpost http://joschu.net/blog/kl-approx.html
-    with T.no_grad():
-        if ratio is None:
-            ratio = T.exp(log_probs - old_log_probs)
+    # We only calculate the gradient during the behavior cloning loss
+    # calculation of the aux epochs.
 
+    if is_aux:
+        ratio = T.exp(log_probs - old_log_probs)
         log_ratio = log_probs - old_log_probs
         kl_div = ratio - 1 - log_ratio
+
+        return kl_div.mean()
+
+    else:
+        with T.no_grad():
+            log_ratio = log_probs - old_log_probs
+            kl_div = ratio - 1 - log_ratio
 
         return kl_div.mean()
 

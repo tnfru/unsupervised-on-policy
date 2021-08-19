@@ -32,7 +32,7 @@ class Agent:
         self.AUX_WARN_THRESHOLD = 100
 
         if self.use_wandb:
-            prefix = 'relu'
+            prefix = 'kl div with grad in aux'
             init_logging(config, self.actor, self.critic, prefix)
 
     def get_action(self, state):

@@ -22,7 +22,7 @@ def train_aux(agent, states, expected_returns, old_log_probs,
     action_probs, aux_values = agent.actor(states)
     action_dist = Categorical(logits=action_probs)
     log_probs = action_dist.probs.log()
-    kl_div = approx_kl_div(log_probs, old_log_probs)
+    kl_div = approx_kl_div(log_probs, old_log_probs, is_aux=True)
 
     aux_value_loss = value_loss_fun(state_values=aux_values,
                                     old_state_values=old_aux_value,
