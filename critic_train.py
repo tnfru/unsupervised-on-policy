@@ -1,4 +1,4 @@
-from objectives import value_loss_fun
+from losses import value_loss_fun
 from logger import log_critic
 
 from utils import do_gradient_step

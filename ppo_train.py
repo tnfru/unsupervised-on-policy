@@ -33,7 +33,7 @@ def train_ppo(agent, states, actions, old_log_probs, advantages):
 
     kl_div = approx_kl_div(log_probs, old_log_probs, ratio, is_aux=False)
 
-    if config['kl_max'] is not None and kl_div < config['kl_max']:
+    if config['kl_max'] is None or kl_div < config['kl_max']:
         # If KL divergence is too big we don't take gradient steps
         do_gradient_step(agent.actor, agent.actor_opt, objective,
                          grad_norm=config['grad_norm'], retain_graph=True)
