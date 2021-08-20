@@ -36,7 +36,7 @@ def train_aux(agent, states, expected_returns, old_log_probs,
 
     aux_loss = aux_value_loss + kl_div * config['beta']
 
-    if kl_div < config['kl_max']:
+    if config['kl_max'] is not None and kl_div < config['kl_max']:
         # If KL divergence is too big we don't take gradient steps
         do_gradient_step(agent.actor, agent.actor_opt, aux_loss,
                          grad_norm=config['grad_norm'])
