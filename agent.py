@@ -8,8 +8,8 @@ from torch.distributions.categorical import Categorical
 from networks import PPG, CriticNet
 from logger import init_logging
 from trajectory import Trajectory
-from aux_train import train_aux_epoch
-from ppo_train import train_ppo_epoch
+from aux_training import train_aux_epoch
+from ppo_training import train_ppo_epoch
 
 
 class Agent:
@@ -32,7 +32,7 @@ class Agent:
         self.AUX_WARN_THRESHOLD = 100
 
         if self.use_wandb:
-            prefix = '6 aux epoch'
+            prefix = '3 aux epochs'
             init_logging(config, self.actor, self.critic, prefix)
 
     def get_action(self, state):

@@ -3,7 +3,7 @@ from torch.distributions.categorical import Categorical
 
 from utils import data_to_device, approx_kl_div, do_gradient_step
 from logger import log_ppo
-from critic_train import train_critic
+from critic_training import train_critic
 
 
 def train_ppo_epoch(agent, loader):
@@ -46,7 +46,6 @@ def train_ppo(agent, states, actions, old_log_probs, advantages):
 # This is because we want to do gradient ascent on the objectives, but
 # optimizers in PyTorch generally do gradient descent
 
-
 def ppo_objective(advantages, ratio, policy_clip):
     weighted_objective = ratio * advantages
     clipped_objective = ratio.clamp(1 - policy_clip,
@@ -57,6 +56,6 @@ def ppo_objective(advantages, ratio, policy_clip):
 
 
 def entropy_objective(action_distribution, entropy_coeff):
-    entropy_loss = action_distribution.entropy().mean() * entropy_coeff
+    entropy_loss = -action_distribution.entropy().mean() * entropy_coeff
 
-    return -entropy_loss
+    return entropy_loss
