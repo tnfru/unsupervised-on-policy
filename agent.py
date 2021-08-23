@@ -1,7 +1,7 @@
 import torch as T
-
-import torch.nn as nn
 import torch.optim as optim
+import gym
+
 from torch.utils.data import DataLoader
 from torch.distributions.categorical import Categorical
 
@@ -15,6 +15,9 @@ from ppo_training import train_ppo_epoch
 class Agent:
     def __init__(self, env, action_dim, state_dim, config):
         self.env = env
+        # action_dim = gym.spaces.utils.flatdim(env.action_space)
+        # discreteaction space
+
         self.actor = PPG(action_dim, state_dim)
         self.critic = CriticNet(state_dim)
         self.batch_size = config['batch_size']
