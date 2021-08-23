@@ -1,20 +1,23 @@
 import torch as T
-
-import torch.nn as nn
 import torch.optim as optim
+import gym
+
 from torch.utils.data import DataLoader
 from torch.distributions.categorical import Categorical
 
 from networks import PPG, CriticNet
 from logger import init_logging
 from trajectory import Trajectory
-from aux_train import train_aux_epoch
-from ppo_train import train_ppo_epoch
+from aux_training import train_aux_epoch
+from ppo_training import train_ppo_epoch
 
 
 class Agent:
     def __init__(self, env, action_dim, state_dim, config):
         self.env = env
+        # action_dim = gym.spaces.utils.flatdim(env.action_space)
+        # discreteaction space
+
         self.actor = PPG(action_dim, state_dim)
         self.critic = CriticNet(state_dim)
         self.batch_size = config['batch_size']
@@ -32,7 +35,7 @@ class Agent:
         self.AUX_WARN_THRESHOLD = 100
 
         if self.use_wandb:
-            prefix = 'kl div with grad in aux'
+            prefix = '3 aux epochs'
             init_logging(config, self.actor, self.critic, prefix)
 
     def get_action(self, state):

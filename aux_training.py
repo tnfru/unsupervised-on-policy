@@ -1,8 +1,8 @@
 from torch.distributions.categorical import Categorical
 from utils import data_to_device, approx_kl_div, do_gradient_step
-from objectives import value_loss_fun
+from losses import value_loss_fun
 from logger import warn_about_aux_loss_scaling, log_aux
-from critic_train import train_critic
+from critic_training import train_critic
 
 
 def train_aux_epoch(agent, loader):
@@ -36,7 +36,7 @@ def train_aux(agent, states, expected_returns, old_log_probs,
 
     aux_loss = aux_value_loss + kl_div * config['beta']
 
-    if kl_div < config['kl_max']:
+    if config['kl_max'] is None or kl_div < config['kl_max']:
         # If KL divergence is too big we don't take gradient steps
         do_gradient_step(agent.actor, agent.actor_opt, aux_loss,
                          grad_norm=config['grad_norm'])
