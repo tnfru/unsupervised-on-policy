@@ -4,7 +4,7 @@ from logger import log_critic
 from utils import do_gradient_step
 
 
-def train_critic(agent, states, expected_returns, old_state_values):
+def train_critic_batch(agent, states, expected_returns, old_state_values):
     config = agent.config
     state_values = agent.critic(states)
     critic_loss = value_loss_fun(state_values=state_values,

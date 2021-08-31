@@ -3,7 +3,7 @@ from torch.distributions.categorical import Categorical
 
 from utils import data_to_device, approx_kl_div, do_gradient_step
 from logger import log_ppo
-from critic_training import train_critic
+from critic_training import train_critic_batch
 
 
 def train_ppo_epoch(agent, loader):
@@ -12,11 +12,11 @@ def train_ppo_epoch(agent, loader):
         log_probs = data_to_device(rollout_data, agent.device)
         expected_returns = expected_returns.unsqueeze(1)
 
-        train_ppo(agent, states, actions, log_probs, advantages)
-        train_critic(agent, states, expected_returns, state_values)
+        train_ppo_batch(agent, states, actions, log_probs, advantages)
+        train_critic_batch(agent, states, expected_returns, state_values)
 
 
-def train_ppo(agent, states, actions, old_log_probs, advantages):
+def train_ppo_batch(agent, states, actions, old_log_probs, advantages):
     config = agent.config
     action_probs, _ = agent.actor(states)
     action_dist = Categorical(logits=action_probs)
