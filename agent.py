@@ -38,16 +38,16 @@ class Agent:
             prefix = '3 aux epochs'
             init_logging(config, self.actor, self.critic, prefix)
 
+    @T.no_grad()
     def get_action(self, state):
-        with T.no_grad():
-            action_probs, aux_value = self.actor(state)
+        action_probs, aux_value = self.actor(state)
 
-            action_dist = Categorical(logits=action_probs)
-            action = action_dist.sample()
-            log_prob = action_dist.log_prob(action).item()
-            log_dist = action_dist.probs.log().cpu().detach()
+        action_dist = Categorical(logits=action_probs)
+        action = action_dist.sample()
+        log_prob = action_dist.log_prob(action).item()
+        log_dist = action_dist.probs.log().cpu().detach()
 
-            return action.item(), log_prob, aux_value.item(), log_dist
+        return action.item(), log_prob, aux_value.item(), log_dist
 
     def learn(self):
         config = self.config

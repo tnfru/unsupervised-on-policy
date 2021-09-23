@@ -1,8 +1,12 @@
 import gym
+import torch as T
+import random
 from agent import Agent
 from rollout import run_timesteps
 
 if __name__ == '__main__':
+    T.manual_seed(1337)
+    random.seed(1337)
     num_timesteps = int(1e7)
     config = {'policy_clip': 0.25,
               'kl_max': 0.03,

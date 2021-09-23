@@ -2,7 +2,7 @@ from torch.distributions.categorical import Categorical
 from utils import data_to_device, approx_kl_div, do_gradient_step
 from losses import value_loss_fun
 from logger import warn_about_aux_loss_scaling, log_aux
-from critic_training import train_critic
+from critic_training import train_critic_batch
 
 
 def train_aux_epoch(agent, loader):
@@ -12,15 +12,15 @@ def train_aux_epoch(agent, loader):
         expected_returns = expected_returns.unsqueeze(1)
         aux_returns = aux_returns.unsqueeze(1)
 
-        train_aux(agent, states, aux_returns, log_dists, aux_values)
-        train_critic(agent, states, expected_returns, state_values)
+        train_aux_batch(agent, states, aux_returns, log_dists, aux_values)
+        train_critic_batch(agent, states, expected_returns, state_values)
 
 
-def train_aux(agent, states, expected_returns, old_log_probs,
-              old_aux_value):
+def train_aux_batch(agent, states, expected_returns, old_log_probs,
+                    old_aux_value):
     config = agent.config
-    action_probs, aux_values = agent.actor(states)
-    action_dist = Categorical(logits=action_probs)
+    action_logits, aux_values = agent.actor(states)
+    action_dist = Categorical(logits=action_logits)
     log_probs = action_dist.probs.log()
     kl_div = approx_kl_div(log_probs, old_log_probs, is_aux=True)
 
