@@ -1,6 +1,6 @@
 # Unsupervised On-Policy Reinforcement Learning
 
-This work combines [Active Pre-Training](https://arxiv.org/abs/2103.04551) with an On-Policy alogirthm, [Phasic Policy Gradient](https://arxiv.org/abs/2009.04416).
+This work combines [Active Pre-Training](https://arxiv.org/abs/2103.04551) with an On-Policy algorithm, [Phasic Policy Gradient](https://arxiv.org/abs/2009.04416).
 
 ## Active Pre-Training
 
