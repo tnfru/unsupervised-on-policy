@@ -38,9 +38,9 @@ def approx_kl_div(log_probs, old_log_probs, ratio=None, is_aux=False):
 def do_gradient_step(network, optimizer, objective, grad_norm,
                      retain_graph=False):
     optimizer.zero_grad()
+    objective.backward(retain_graph=retain_graph)
     if grad_norm is not None:
         T.nn.utils.clip_grad_norm_(network.parameters(), grad_norm)
-    objective.backward(retain_graph=retain_graph)
     optimizer.step()
 
 
