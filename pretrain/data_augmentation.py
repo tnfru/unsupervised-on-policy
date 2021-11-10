@@ -1,13 +1,14 @@
 import torch as T
 import torch.nn as nn
 import kornia as K
+import numpy as np
 
 
 class DataAugment(nn.Module):
-    def __init__(self, x_dim, y_dim, pad_size, rng, brightness_clip=0.2):
+    def __init__(self, x_dim, y_dim, pad_size=4, brightness_clip=0.2):
         super().__init__()
 
-        self.rng = rng
+        self.rng = np.random.default_rng()
         self.clip = brightness_clip
 
         self.random_shift = nn.Sequential(

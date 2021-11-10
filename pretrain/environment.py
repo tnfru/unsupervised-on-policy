@@ -3,26 +3,18 @@ import gym
 import torch as T
 import numpy as np
 import einops
+import random
 from supersuit import frame_stack_v1, resize_v0, clip_reward_v0
 from contrastive_learning import ContrastiveLearner
 from data_augmentation import DataAugment
 from reward import ParticleReward
 
-FRAMES_TO_STACK = 4
-FRAMES_TO_SKIP = 4
-PAD_SIZE = 4
-
-# TODO Add seed
-# TODO Terminal on loss of life
-
-X_DIM = 84
-Y_DIM = 84
-
-rng = np.random.default_rng()
-
 
 def preprocess(img):
     img = T.from_numpy(img) / 255
+    # TODO do this after transformation
+    # https://theaisummer.com/self-supervised-representation-learning-computer-vision/
+    # TODO norm to running mean of each channel
 
     if len(img.shape) == 3:  # if no fourth dim, batch size is missing
         img = einops.rearrange(img, 'h w c -> c h w')
@@ -32,10 +24,10 @@ def preprocess(img):
     return img
 
 
-def create_env(name='MsPacman', render=None):
+def create_env(name='MsPacman', frames_to_skip=4, render=None):
     env = gym.make('ALE/' + name + '-v5',
                    obs_type='grayscale',  # ram | rgb | grayscale
-                   frameskip=FRAMES_TO_SKIP,  # frame skip
+                   frameskip=frames_to_skip,  # frame skip
                    mode=0,  # game mode, see Machado et al. 2018
                    difficulty=0,  # game difficulty, see Machado et al. 2018
                    repeat_action_probability=0.25,  # Sticky action probability
@@ -76,13 +68,39 @@ def prep_states(states, augment, contrast, cutoff=False):
     return states
 
 
+def seed_everything(seed, deterministic=False):
+    T.manual_seed(seed)
+
+    if deterministic:
+        T.backends.cudnn.deterministic = True
+        T.backends.cudnn.benchmark = False
+    else:
+        T.backends.cudnn.benchmark = True
+
+    np.random.seed(seed)
+    random.seed(seed)
+    if T.cuda.is_available():
+        T.cuda.manual_seed(seed)
+
+
 if __name__ == '__main__':
-    pacman = create_env()
+    seed_everything(1337, deterministic=False)
+    FRAMES_TO_STACK = 4
+    FRAMES_TO_SKIP = 4
+
+    # TODO Add seed
+    # TODO Terminal on loss of life
+    # TODO compare Adam with LARS optimizer
+
+    X_DIM = 84
+    Y_DIM = 84
+
+    env = create_env(frames_to_skip=FRAMES_TO_SKIP)
     reward_function = ParticleReward()
-    dm = DataAugment(X_DIM, Y_DIM, PAD_SIZE, rng)
+    dm = DataAugment(X_DIM, Y_DIM)
     cl = ContrastiveLearner(FRAMES_TO_STACK)
 
-    trajectory = run_episode(pacman)
+    trajectory = run_episode(env)
     trajectory = prep_states(trajectory, dm, cl, cutoff=True)
 
     rewards = reward_function.calculate_reward(trajectory)

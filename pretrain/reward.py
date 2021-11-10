@@ -2,7 +2,7 @@ import torch as T
 
 
 class ParticleReward:
-    # TODO test original implementation
+    # TODO test against author implementation
     def __init__(self, top_k=16):
         self.mean = 0
         self.samples_done = 0
@@ -10,8 +10,13 @@ class ParticleReward:
         self.top_k = top_k
 
     def calculate_reward(self, states, normalize=True):
+        # to calculate apt reward, we approximate a hypersphere around each
+        # particle (single column entry in latent space). the reward is
+        # roughly equal to the volume of the hypersphere in comparison to its
+        # kNN
+
         particle_volumes = T.norm(states.unsqueeze(1) - states.unsqueeze(0),
-                                  dim=-1)  # hypersphere volume
+                                  dim=-1)
         top_k_rewards, _ = particle_volumes.topk(self.top_k, sorted=True,
                                                  largest=False, dim=1)
 
@@ -27,6 +32,7 @@ class ParticleReward:
         return particle_rewards
 
     def update_mean_estimate(self, x):
+        # TODO replace with RMS
         batch_size = x.size(0)
         self.samples_done += batch_size
         difference = x.mean(dim=0) - self.mean

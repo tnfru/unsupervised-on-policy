@@ -17,7 +17,7 @@ class ContrastiveLearner(nn.Module):
             Rearrange('b c h w -> b (c h w)')
         )
 
-        self.fc = nn.Sequential(
+        self.head = nn.Sequential(
             nn.Linear(3136, hidden_dim),  # 3136 is output dim after conv
             nn.LayerNorm(hidden_dim),
             nn.Tanh(),
@@ -29,6 +29,6 @@ class ContrastiveLearner(nn.Module):
 
     def project(self, x):
         x = self.forward(x)
-        x = self.fc(x)
+        x = self.head(x)
 
         return x
