@@ -3,11 +3,9 @@ import torch as T
 import random
 from agent import Agent
 from rollout import run_timesteps
+import pretrain.environment as environment
 
 if __name__ == '__main__':
-    T.manual_seed(1337)
-    random.seed(1337)
-    num_timesteps = int(1e7)
     config = {'policy_clip': 0.25,
               'kl_max': 0.03,
               'beta': 1,
@@ -29,13 +27,16 @@ if __name__ == '__main__':
               'discount_factor': 0.99
               }
 
-    gym.envs.register(
-        id='CartPole-v2000',
-        entry_point='gym.envs.classic_control:CartPoleEnv',
-        max_episode_steps=2000
-    )
+    FRAMES_TO_STACK = 4
+    FRAMES_TO_SKIP = 4
+    SEED = 1337
+    NUM_TIMESTEPS = int(1e3)
 
-    env = gym.make("CartPole-v2000")
-    agent = Agent(env, action_dim=2, state_dim=4, config=config)
+    X_DIM = 84
+    Y_DIM = 84
 
-    run_timesteps(agent, num_timesteps)
+    environment.seed_everything(SEED)
+    env = environment.create_env(X_DIM, Y_DIM)
+    agent = Agent(env, action_dim=18, state_dim=FRAMES_TO_STACK, config=config)
+
+    run_timesteps(agent, NUM_TIMESTEPS)

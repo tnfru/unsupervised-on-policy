@@ -5,9 +5,9 @@ import numpy as np
 import einops
 import random
 from supersuit import frame_stack_v1, resize_v0, clip_reward_v0
-from contrastive_learning import ContrastiveLearner
-from data_augmentation import DataAugment
-from reward import ParticleReward
+from pretrain.contrastive_learning import ContrastiveLearner
+from pretrain.data_augmentation import DataAugment
+from pretrain.reward import ParticleReward
 
 
 def preprocess(img):
@@ -24,7 +24,8 @@ def preprocess(img):
     return img
 
 
-def create_env(name='MsPacman', frames_to_skip=4, render=None):
+def create_env(x_dim, y_dim, name='MsPacman', frames_to_skip=4,
+               frames_to_stack=4, render=None):
     env = gym.make('ALE/' + name + '-v5',
                    obs_type='grayscale',  # ram | rgb | grayscale
                    frameskip=frames_to_skip,  # frame skip
@@ -36,8 +37,8 @@ def create_env(name='MsPacman', frames_to_skip=4, render=None):
                    )
 
     env = clip_reward_v0(env, lower_bound=-1, upper_bound=1)
-    env = resize_v0(env, X_DIM, Y_DIM, linear_interp=True)
-    env = frame_stack_v1(env, FRAMES_TO_STACK)
+    env = resize_v0(env, x_dim, y_dim, linear_interp=True)
+    env = frame_stack_v1(env, frames_to_stack)
 
     return env
 
@@ -88,19 +89,18 @@ if __name__ == '__main__':
     FRAMES_TO_STACK = 4
     FRAMES_TO_SKIP = 4
 
-    # TODO Add seed
     # TODO Terminal on loss of life
-    # TODO compare Adam with LARS optimizer
+    # TODO compare Adam with LARS optimizer vs AdamW
 
     X_DIM = 84
     Y_DIM = 84
 
-    env = create_env(frames_to_skip=FRAMES_TO_SKIP)
+    environment = create_env(X_DIM, Y_DIM, frames_to_skip=FRAMES_TO_SKIP)
     reward_function = ParticleReward()
     dm = DataAugment(X_DIM, Y_DIM)
     cl = ContrastiveLearner(FRAMES_TO_STACK)
 
-    trajectory = run_episode(env)
+    trajectory = run_episode(environment)
     trajectory = prep_states(trajectory, dm, cl, cutoff=True)
 
     rewards = reward_function.calculate_reward(trajectory)

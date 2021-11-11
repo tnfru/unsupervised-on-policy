@@ -35,7 +35,7 @@ class Agent:
         self.AUX_WARN_THRESHOLD = 100
 
         if self.use_wandb:
-            prefix = '3 aux epochs'
+            prefix = 'Initial Runs'
             init_logging(config, self.actor, self.critic, prefix)
 
     @T.no_grad()

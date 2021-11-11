@@ -4,7 +4,7 @@ import warnings
 
 def init_logging(config, actor, critic, prefix):
     # initialize logging
-    wandb.init(project="cartpole", config=config)
+    wandb.init(project="EntropyPacman", config=config)
     wandb.watch(actor, log="all")
     wandb.watch(critic, log="all")
     wandb.run.name = prefix + '_' + wandb.run.name

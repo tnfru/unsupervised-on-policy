@@ -1,6 +1,7 @@
 import numpy as np
 import torch as T
 import wandb
+from einops import rearrange
 
 from preprocessing import normalize
 from utils import calculate_advantages
@@ -24,6 +25,7 @@ def run_episode(agent, trajectory, render=False):
             agent.env.render()
 
         state = T.tensor(state, dtype=T.float, device=agent.device)
+        state = rearrange(state, 'h w c -> 1 c h w')
         action, log_prob, aux_val, log_dist = agent.get_action(state)
         state_val = agent.critic(state).squeeze().item()
         state = state.cpu()
