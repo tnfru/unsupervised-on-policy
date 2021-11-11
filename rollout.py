@@ -60,6 +60,7 @@ def run_episode(agent, trajectory, render=False):
                                           config['gae_lambda'])
     aux_rets = T.tensor(aux_vals, dtype=T.float) + aux_advantages
     advantages = normalize(advantages)
+    # TODO norm aux advantages too?
     trajectory.append_timesteps(states=states,
                                 actions=actions,
                                 expected_returns=expected_returns,

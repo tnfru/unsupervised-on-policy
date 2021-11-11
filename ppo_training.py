@@ -1,4 +1,5 @@
 import torch as T
+import wandb
 from torch.distributions.categorical import Categorical
 
 from utils import data_to_device, approx_kl_div, do_gradient_step
@@ -10,6 +11,15 @@ def train_ppo_epoch(agent, loader):
     for rollout_data in loader:
         states, actions, expected_returns, state_values, advantages, \
         log_probs = data_to_device(rollout_data, agent.device)
+
+        if agent.is_pretrain:
+            representations = agent.data_aug(states)
+            representations = agent.contrast_net(representations)
+            # TODO contrastive loss
+            advantages = agent.reward_function.calculate_reward(representations)
+            expected_returns = advantages.clone()
+            wandb.log({'particle rewards': advantages.mean()})
+        #else:
         expected_returns = expected_returns.unsqueeze(1)
 
         train_ppo_batch(agent, states, actions, log_probs, advantages)

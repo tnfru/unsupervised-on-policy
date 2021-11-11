@@ -9,6 +9,7 @@ class ParticleReward:
         self.c = 1
         self.top_k = top_k
 
+    @T.no_grad()
     def calculate_reward(self, states, normalize=True):
         # to calculate apt reward, we approximate a hypersphere around each
         # particle (single column entry in latent space). the reward is

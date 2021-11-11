@@ -10,13 +10,14 @@ from logger import init_logging
 from trajectory import Trajectory
 from aux_training import train_aux_epoch
 from ppo_training import train_ppo_epoch
+from pretrain.reward import ParticleReward
+from pretrain.data_augmentation import DataAugment
+from pretrain.contrastive_learning import ContrastiveLearner
 
 
 class Agent:
     def __init__(self, env, action_dim, state_dim, config):
         self.env = env
-        # action_dim = gym.spaces.utils.flatdim(env.action_space)
-        # discreteaction space
 
         self.actor = PPG(action_dim, state_dim)
         self.critic = CriticNet(state_dim)
@@ -33,6 +34,10 @@ class Agent:
         self.use_wandb = config['use_wandb']
         self.steps = 0
         self.AUX_WARN_THRESHOLD = 100
+        self.reward_function = ParticleReward()
+        self.is_pretrain = True
+        self.data_aug = DataAugment(config['height'], config['width'])
+        self.contrast_net = ContrastiveLearner(state_dim)
 
         if self.use_wandb:
             prefix = 'Initial Runs'
@@ -61,7 +66,7 @@ class Agent:
     def ppo_training_phase(self):
         config = self.config
         loader = DataLoader(self.trajectory, batch_size=config[
-            'batch_size'], shuffle=True, pin_memory=True)
+            'batch_size'], shuffle=True, pin_memory=True, drop_last=True)
 
         for epoch in range(config['train_iterations']):
             train_ppo_epoch(agent=self, loader=loader)
