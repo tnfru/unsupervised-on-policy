@@ -47,7 +47,8 @@ def run_episode(agent, trajectory, pretrain):
         rewards, representations = calc_pretrain_advantages(agent, states)
 
         if agent.use_wandb:
-            wandb.log({'particle reward': T.sum(rewards)})
+            wandb.log({'particle reward sum': T.sum(rewards)})
+            wandb.log({'particle reward mean': T.mean(rewards)})
 
     config = agent.config
 
@@ -62,7 +63,10 @@ def run_episode(agent, trajectory, pretrain):
                                           config['gae_lambda'])
     aux_rets = T.tensor(aux_vals, dtype=T.float) + aux_advantages
     advantages = normalize(advantages)
+
     # TODO norm aux advantages too?
+    aux_advantages = normalize(aux_advantages)
+
     trajectory.append_timesteps(states=states,
                                 actions=actions,
                                 expected_returns=expected_returns,
