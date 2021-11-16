@@ -16,6 +16,9 @@ class DataAugment(nn.Module):
             K.augmentation.RandomCrop(size=(x_dim, y_dim))
         )
 
+        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
+        self.to(self.device)
+
     @T.no_grad()
     def random_brightness(self, x):
         brightness_change = self.rng.uniform(-self.clip, self.clip)

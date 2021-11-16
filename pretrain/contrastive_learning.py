@@ -1,3 +1,4 @@
+import torch as T
 import torch.nn as nn
 from einops.layers.torch import Rearrange
 
@@ -23,6 +24,8 @@ class ContrastiveLearner(nn.Module):
             nn.Tanh(),
             nn.Linear(hidden_dim, out_dim)
         )
+        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
+        self.to(self.device)
 
     def forward(self, x):
         return self.conv(x)
