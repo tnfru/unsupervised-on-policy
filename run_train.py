@@ -29,7 +29,7 @@ if __name__ == '__main__':
     FRAMES_TO_STACK = 4
     FRAMES_TO_SKIP = 4
     SEED = 1337
-    NUM_TIMESTEPS = int(1e3)
+    NUM_TIMESTEPS = int(1e7)
 
     environment.seed_everything(SEED)
     env = environment.create_env(config['height'], config['width'])
