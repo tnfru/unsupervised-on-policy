@@ -21,8 +21,14 @@ class ParticleReward:
 
         particle_volumes = T.norm(states.unsqueeze(1) - states.unsqueeze(0),
                                   dim=-1)
-        top_k_rewards, _ = particle_volumes.topk(self.top_k, sorted=True,
-                                                 largest=False, dim=1)
+        if self.top_k > len(particle_volumes):
+            # If the size of the last batch is smaller than the number of kNN
+            top_k = len(particle_volumes)
+            top_k_rewards, _ = particle_volumes.topk(top_k, sorted=True,
+                                                    largest=False, dim=1)
+        else:
+            top_k_rewards, _ = particle_volumes.topk(self.top_k, sorted=True,
+                                                    largest=False, dim=1)
 
         self.update_mean_estimate(top_k_rewards.reshape(-1, 1))
 
@@ -49,6 +55,8 @@ def calc_pretrain_advantages(agent, states):
 
     loader = DataLoader(dset, batch_size=agent.config[
         'batch_size'], shuffle=False, pin_memory=True, drop_last=False)
+        # Necessary because last batch might not have enough to find the
+        # kNN
 
     all_representations = []
     all_rewards = []

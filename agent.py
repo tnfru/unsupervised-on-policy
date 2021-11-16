@@ -36,7 +36,6 @@ class Agent:
         self.steps = 0
         self.AUX_WARN_THRESHOLD = 100
         self.reward_function = ParticleReward()
-        self.is_pretrain = True
         self.data_aug = DataAugment(config['height'], config['width'])
         self.contrast_net = ContrastiveLearner(state_dim)
 
