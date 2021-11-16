@@ -5,9 +5,10 @@ from einops import rearrange
 
 from preprocessing import normalize
 from utils import calculate_advantages
+from logger import log_episode_length
+from pretrain.reward import calc_pretrain_advantages
 
-
-def run_episode(agent, trajectory, render=False):
+def run_episode(agent, trajectory, pretrain):
     states = []
     actions = []
     rewards = []
@@ -21,9 +22,6 @@ def run_episode(agent, trajectory, render=False):
     state = agent.env.reset()
 
     while not done:
-        if render:
-            agent.env.render()
-
         state = T.tensor(state, dtype=T.float, device=agent.device)
         state = rearrange(state, 'h w c -> 1 c h w')
         action, log_prob, aux_val, log_dist = agent.get_action(state)
@@ -45,10 +43,14 @@ def run_episode(agent, trajectory, render=False):
     if agent.use_wandb:
         wandb.log({'reward': np.sum(rewards)})
 
-    if render:  # If run for visualization no need to do learning
-        return
+    if pretrain:
+        rewards, representations = calc_pretrain_advantages(agent, states)
+
+        if agent.use_wandb:
+            wandb.log({'particle reward': T.sum(rewards)})
 
     config = agent.config
+
     advantages = calculate_advantages(rewards,
                                       state_vals,
                                       config['discount_factor'],
@@ -74,15 +76,18 @@ def run_episode(agent, trajectory, render=False):
     return trajectory
 
 
-def run_timesteps(agent, num_timesteps):
+def run_timesteps(agent, num_timesteps, pretrain):
     timestep = 0
     agent.forget()
 
     while timestep < num_timesteps:
-        agent.trajectory = run_episode(agent, agent.trajectory)
+        agent.trajectory = run_episode(agent, agent.trajectory, pretrain)
 
         if len(agent.trajectory) >= agent.config['rollout_length']:
             timestep += len(agent.trajectory)
+
+            if agent.config['use_wandb']:
+                log_episode_length(len(agent.trajectory))
 
             agent.trajectory.fix_datatypes()
             agent.learn()

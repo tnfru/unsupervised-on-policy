@@ -1,4 +1,7 @@
 import torch as T
+from torch.utils.data import DataLoader
+
+from pretrain.state_data import StateData
 
 
 class ParticleReward:
@@ -38,3 +41,30 @@ class ParticleReward:
         self.samples_done += batch_size
         difference = x.mean(dim=0) - self.mean
         self.mean += difference * batch_size / self.samples_done
+
+
+def calc_pretrain_advantages(agent, states):
+    dset = StateData()
+    dset.append_states(states)
+
+    loader = DataLoader(dset, batch_size=agent.config[
+        'batch_size'], shuffle=False, pin_memory=True, drop_last=False)
+
+    all_representations = []
+    all_rewards = []
+
+    for state_batch in loader:
+        state_batch = state_batch.to(agent.device)
+        representations = agent.data_aug(state_batch)
+        representations = agent.contrast_net(representations)
+        rewards = agent.reward_function.calculate_reward(representations)
+
+        rewards = rewards.cpu() #.tolist()
+        representations = representations.cpu()
+
+        all_representations.append(representations)
+        all_rewards.append(rewards)
+        #TODO contrastlive learning loss
+    all_rewards = T.cat(all_rewards)
+    all_representations = T.cat(all_representations)
+    return all_rewards, all_representations

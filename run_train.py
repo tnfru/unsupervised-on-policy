@@ -35,4 +35,4 @@ if __name__ == '__main__':
     env = environment.create_env(config['height'], config['width'])
     agent = Agent(env, action_dim=18, state_dim=FRAMES_TO_STACK, config=config)
 
-    run_timesteps(agent, NUM_TIMESTEPS)
+    run_timesteps(agent, NUM_TIMESTEPS, pretrain=True)
