@@ -38,3 +38,8 @@ def warn_about_aux_loss_scaling(aux_loss):
     warnings.warn(f'Aux Loss has value {aux_loss}. Consider '
                   f'scaling val_coeff down to not disrupt policy '
                   f'learning')
+
+def log_episode_length(timesteps):
+    wandb.log({
+        'episode_length': timesteps
+    })

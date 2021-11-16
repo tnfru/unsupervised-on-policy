@@ -28,6 +28,7 @@ class Agent:
                                      lr=config['critic_lr'])
         self.device = T.device(
             'cuda:0' if T.cuda.is_available() else 'cpu')
+            # TODO add data paralellism
         self.config = config
         self.entropy_coeff = config['entropy_coeff']
         self.trajectory = Trajectory()
