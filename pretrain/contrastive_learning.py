@@ -9,7 +9,9 @@ class ContrastiveLearner(nn.Module):
     def __init__(self, stacked_frames, hidden_dim=1024, out_dim=15):
         # TODO spectral normalization (?)
         super(ContrastiveLearner, self).__init__()
-
+        self.device = T.device('cuda' if T.cuda.is_available() else 'cpu')
+        self.to(self.device)
+        
         self.conv = nn.Sequential(
             nn.Conv2d(stacked_frames, 32, 8, stride=4),
             nn.ELU(),
