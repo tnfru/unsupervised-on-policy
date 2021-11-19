@@ -102,8 +102,9 @@ class Agent:
 
         loader = DataLoader(state_dset, batch_size=config['batch_size'],
         shuffle=True, pin_memory=True, num_workers=4, drop_last=True)
-
+        
         for state_batch in loader:
+            state_batch = state_batch.to(self.device)
             view_1 = self.data_aug(state_batch)
             view_2 = self.data_aug(state_batch)
 
