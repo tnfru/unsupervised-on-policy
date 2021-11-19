@@ -10,7 +10,7 @@ if __name__ == '__main__':
               'rollout_length': 256,
               'train_iterations': 1,
               'entropy_coeff': 0.01,
-              'grad_norm': 0.5,
+              'grad_norm': 10, # 0.5 alternatively
               'critic_lr': 1e-3,
               'actor_lr': 3e-4,
               'aux_freq': 32,

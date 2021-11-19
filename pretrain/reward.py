@@ -9,7 +9,7 @@ from pretrain.state_data import StateData
 
 class ParticleReward:
     # TODO test against author implementation
-    def __init__(self, top_k=16):
+    def __init__(self, top_k=5):
         self.mean = 0
         self.samples_done = 0
         self.c = 1
@@ -50,6 +50,7 @@ class ParticleReward:
         self.samples_done += batch_size
         difference = x.mean(dim=0) - self.mean
         self.mean += difference * batch_size / self.samples_done
+        # TODO is this mean correct?
 
 @T.no_grad()
 def calc_pretrain_advantages(agent, state_set):
