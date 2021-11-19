@@ -1,6 +1,7 @@
 import torch as T
 import torch.optim as optim
 import gym
+import wandb
 
 from torch.utils.data import DataLoader
 from torch.distributions.categorical import Categorical
@@ -101,7 +102,8 @@ class Agent:
         state_dset.append_states(states)
 
         loader = DataLoader(state_dset, batch_size=config['batch_size'],
-        shuffle=True, pin_memory=True, num_workers=4, drop_last=True)
+                            shuffle=True, pin_memory=True)
+        total_contrast_loss = 0
         
         for state_batch in loader:
             state_batch = state_batch.to(self.device)
@@ -118,4 +120,8 @@ class Agent:
             self.contrast_opt.step()
 
             log_contrast_loss(loss.item())
+            total_contrast_loss += loss.item()
+        total_contrast_loss /= len(loader)
+        wandb.log({'total contrast loss': total_contrast_loss})
+        
 

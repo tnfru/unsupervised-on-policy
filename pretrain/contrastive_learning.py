@@ -6,7 +6,7 @@ from einops.layers.torch import Rearrange
 
 
 class ContrastiveLearner(nn.Module):
-    def __init__(self, stacked_frames, hidden_dim=1024, out_dim=128):
+    def __init__(self, stacked_frames, hidden_dim=1024, out_dim=5):
         # TODO out dim 5 or 15?
         # TODO spectral normalization (?)
         super(ContrastiveLearner, self).__init__()

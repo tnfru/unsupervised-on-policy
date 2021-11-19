@@ -24,7 +24,7 @@ if __name__ == '__main__':
               'discount_factor': 0.99,
               'height': 84,
               'width': 84,
-              'contrast_lr': 3e-4,
+              'contrast_lr': 3e-3,
               'temperature': 0.1
               }
 
