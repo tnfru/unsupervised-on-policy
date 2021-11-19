@@ -43,3 +43,6 @@ def log_episode_length(timesteps):
     wandb.log({
         'episode_length': timesteps
     })
+
+def log_contrast_loss(loss):
+    wandb.log({'contrastive loss': loss})

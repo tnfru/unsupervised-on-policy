@@ -7,6 +7,7 @@ from preprocessing import normalize
 from utils import calculate_advantages
 from logger import log_episode_length
 from pretrain.reward import calc_pretrain_advantages
+from pretrain.state_data import StateData
 
 def run_episode(agent, trajectory, pretrain):
     states = []
@@ -44,7 +45,10 @@ def run_episode(agent, trajectory, pretrain):
         wandb.log({'reward': np.sum(rewards)})
 
     if pretrain:
-        rewards, representations = calc_pretrain_advantages(agent, states)
+        state_dset = StateData()
+        state_dset.append_states(states)
+        state_dset.fix_datatypes()
+        rewards = calc_pretrain_advantages(agent, state_dset)
 
         if agent.use_wandb:
             wandb.log({'particle reward sum': T.sum(rewards)})
@@ -80,12 +84,12 @@ def run_episode(agent, trajectory, pretrain):
     return trajectory
 
 
-def run_timesteps(agent, num_timesteps, pretrain):
+def run_timesteps(agent, num_timesteps, is_pretrain):
     timestep = 0
     agent.forget()
 
     while timestep < num_timesteps:
-        agent.trajectory = run_episode(agent, agent.trajectory, pretrain)
+        agent.trajectory = run_episode(agent, agent.trajectory, is_pretrain)
 
         if len(agent.trajectory) >= agent.config['rollout_length']:
             timestep += len(agent.trajectory)
@@ -94,5 +98,5 @@ def run_timesteps(agent, num_timesteps, pretrain):
                 log_episode_length(len(agent.trajectory))
 
             agent.trajectory.fix_datatypes()
-            agent.learn()
+            agent.learn(is_pretrain=is_pretrain)
             agent.forget()

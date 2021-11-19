@@ -24,6 +24,8 @@ if __name__ == '__main__':
               'discount_factor': 0.99,
               'height': 84,
               'width': 84,
+              'contrast_lr': 3e-4,
+              'temperature': 0.1
               }
 
     FRAMES_TO_STACK = 4
@@ -35,4 +37,4 @@ if __name__ == '__main__':
     env = environment.create_env(config['height'], config['width'])
     agent = Agent(env, action_dim=18, state_dim=FRAMES_TO_STACK, config=config)
 
-    run_timesteps(agent, NUM_TIMESTEPS, pretrain=True)
+    run_timesteps(agent, NUM_TIMESTEPS, is_pretrain=True)

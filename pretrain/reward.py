@@ -1,5 +1,8 @@
 import torch as T
+import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
+
 
 from pretrain.state_data import StateData
 
@@ -30,10 +33,10 @@ class ParticleReward:
             top_k_rewards, _ = particle_volumes.topk(self.top_k, sorted=True,
                                                     largest=False, dim=1)
 
-        self.update_mean_estimate(top_k_rewards.reshape(-1, 1))
 
         if normalize:
             # TODO test normalization
+            self.update_mean_estimate(top_k_rewards.reshape(-1, 1))
             top_k_rewards /= self.mean
 
         top_k_rewards = top_k_rewards.mean(dim=1)
@@ -48,17 +51,13 @@ class ParticleReward:
         difference = x.mean(dim=0) - self.mean
         self.mean += difference * batch_size / self.samples_done
 
-
-def calc_pretrain_advantages(agent, states):
-    dset = StateData()
-    dset.append_states(states)
-
-    loader = DataLoader(dset, batch_size=agent.config[
+@T.no_grad()
+def calc_pretrain_advantages(agent, state_set):
+    loader = DataLoader(state_set, batch_size=agent.config[
         'batch_size'], shuffle=False, pin_memory=True, drop_last=False)
         # Necessary because last batch might not have enough to find the
         # kNN
 
-    all_representations = []
     all_rewards = []
 
     for state_batch in loader:
@@ -70,9 +69,9 @@ def calc_pretrain_advantages(agent, states):
         rewards = rewards.cpu() #.tolist()
         representations = representations.cpu()
 
-        all_representations.append(representations)
         all_rewards.append(rewards)
-        #TODO contrastlive learning loss
+
     all_rewards = T.cat(all_rewards)
-    all_representations = T.cat(all_representations)
-    return all_rewards, all_representations
+
+    return all_rewards
+

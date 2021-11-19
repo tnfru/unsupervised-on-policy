@@ -9,7 +9,7 @@ class StateData(T.utils.data.Dataset):
         return len(self.states)
 
     def append_states(self, states):
-        self.states.extend(T.cat(states))
+        self.states.extend(states)
 
     def fix_datatypes(self):
         self.states = T.cat(self.states)
