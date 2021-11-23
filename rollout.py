@@ -1,12 +1,15 @@
 import numpy as np
 import torch as T
 import wandb
+from einops import rearrange
 
 from preprocessing import normalize
 from utils import calculate_advantages
+from logger import log_episode_length
+from pretrain.reward import calc_pretrain_advantages
+from pretrain.state_data import StateData
 
-
-def run_episode(agent, trajectory, render=False):
+def run_episode(agent, trajectory, pretrain):
     states = []
     actions = []
     rewards = []
@@ -20,10 +23,8 @@ def run_episode(agent, trajectory, render=False):
     state = agent.env.reset()
 
     while not done:
-        if render:
-            agent.env.render()
-
         state = T.tensor(state, dtype=T.float, device=agent.device)
+        state = rearrange(state, 'h w c -> 1 c h w')
         action, log_prob, aux_val, log_dist = agent.get_action(state)
         state_val = agent.critic(state).squeeze().item()
         state = state.cpu()
@@ -43,10 +44,18 @@ def run_episode(agent, trajectory, render=False):
     if agent.use_wandb:
         wandb.log({'reward': np.sum(rewards)})
 
-    if render:  # If run for visualization no need to do learning
-        return
+    if pretrain:
+        state_dset = StateData()
+        state_dset.append_states(states)
+        state_dset.fix_datatypes()
+        rewards = calc_pretrain_advantages(agent, state_dset)
+
+        if agent.use_wandb:
+            wandb.log({'particle reward sum': T.sum(rewards)})
+            wandb.log({'particle reward mean': T.mean(rewards)})
 
     config = agent.config
+
     advantages = calculate_advantages(rewards,
                                       state_vals,
                                       config['discount_factor'],
@@ -58,6 +67,10 @@ def run_episode(agent, trajectory, render=False):
                                           config['gae_lambda'])
     aux_rets = T.tensor(aux_vals, dtype=T.float) + aux_advantages
     advantages = normalize(advantages)
+
+    # TODO norm aux advantages too?
+    aux_advantages = normalize(aux_advantages)
+
     trajectory.append_timesteps(states=states,
                                 actions=actions,
                                 expected_returns=expected_returns,
@@ -71,16 +84,19 @@ def run_episode(agent, trajectory, render=False):
     return trajectory
 
 
-def run_timesteps(agent, num_timesteps):
+def run_timesteps(agent, num_timesteps, is_pretrain):
     timestep = 0
     agent.forget()
 
     while timestep < num_timesteps:
-        agent.trajectory = run_episode(agent, agent.trajectory)
+        agent.trajectory = run_episode(agent, agent.trajectory, is_pretrain)
 
         if len(agent.trajectory) >= agent.config['rollout_length']:
             timestep += len(agent.trajectory)
 
+            if agent.config['use_wandb']:
+                log_episode_length(len(agent.trajectory))
+
             agent.trajectory.fix_datatypes()
-            agent.learn()
+            agent.learn(is_pretrain=is_pretrain)
             agent.forget()

@@ -1,13 +1,8 @@
-import gym
-import torch as T
-import random
 from agent import Agent
 from rollout import run_timesteps
+import pretrain.environment as environment
 
 if __name__ == '__main__':
-    T.manual_seed(1337)
-    random.seed(1337)
-    num_timesteps = int(1e7)
     config = {'policy_clip': 0.25,
               'kl_max': 0.03,
               'beta': 1,
@@ -15,7 +10,7 @@ if __name__ == '__main__':
               'rollout_length': 256,
               'train_iterations': 1,
               'entropy_coeff': 0.01,
-              'grad_norm': 0.5,
+              'grad_norm': 10, # 0.5 alternatively
               'critic_lr': 1e-3,
               'actor_lr': 3e-4,
               'aux_freq': 32,
@@ -26,16 +21,20 @@ if __name__ == '__main__':
               'value_clip': None,
               'entropy_decay': 0.999,
               'use_wandb': True,
-              'discount_factor': 0.99
+              'discount_factor': 0.99,
+              'height': 84,
+              'width': 84,
+              'contrast_lr': 3e-3,
+              'temperature': 0.1
               }
 
-    gym.envs.register(
-        id='CartPole-v2000',
-        entry_point='gym.envs.classic_control:CartPoleEnv',
-        max_episode_steps=2000
-    )
+    FRAMES_TO_STACK = 4
+    FRAMES_TO_SKIP = 4
+    SEED = 1337
+    NUM_TIMESTEPS = int(1e7)
 
-    env = gym.make("CartPole-v2000")
-    agent = Agent(env, action_dim=2, state_dim=4, config=config)
+    environment.seed_everything(SEED)
+    env = environment.create_env(config['height'], config['width'])
+    agent = Agent(env, action_dim=18, state_dim=FRAMES_TO_STACK, config=config)
 
-    run_timesteps(agent, num_timesteps)
+    run_timesteps(agent, NUM_TIMESTEPS, is_pretrain=True)
