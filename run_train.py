@@ -24,7 +24,10 @@ if __name__ == '__main__':
               'height': 84,
               'width': 84,
               'contrast_lr': 3e-3,
-              'temperature': 0.1
+              'temperature': 0.1,
+              'contrast_head_dim': 5,
+              'frames_to_skip': 4,
+              'frames_to_stack': 4
               }
 
     FRAMES_TO_STACK = 4
@@ -32,8 +35,12 @@ if __name__ == '__main__':
     SEED = 1337
     NUM_TIMESTEPS = int(2.5e7)
 
+    # TODO Terminal on loss of life
+    # TODO compare Adam with LARS optimizer vs AdamW
+    # TODO image normalization
+
     environment.seed_everything(SEED)
-    env = environment.create_env(config['height'], config['width'])
-    agent = Agent(env, action_dim=18, state_dim=FRAMES_TO_STACK, config=config)
+    env = environment.create_env(config)
+    agent = Agent(env, action_dim=18, config=config)
 
     run_timesteps(agent, NUM_TIMESTEPS, is_pretrain=True)

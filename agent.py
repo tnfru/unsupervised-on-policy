@@ -18,9 +18,10 @@ from pretrain.state_data import StateData
 
 
 class Agent:
-    def __init__(self, env, action_dim, state_dim, config):
+    def __init__(self, env, action_dim, config):
         self.env = env
 
+        state_dim = config['frames_to_stack']
         self.batch_size = config['batch_size']
         self.actor = PPG(action_dim, state_dim)
         self.critic = CriticNet(state_dim)
