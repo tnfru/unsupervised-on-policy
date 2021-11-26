@@ -4,21 +4,20 @@ import pretrain.environment as environment
 
 if __name__ == '__main__':
     config = {'policy_clip': 0.25,
-              'kl_max': 0.03,
+              'kl_max': 0.05,
               'beta': 1,
               'val_coeff': 1e-2,
               'rollout_length': 256,
               'train_iterations': 1,
               'entropy_coeff': 0.01,
-              'grad_norm': 10, # 0.5 alternatively
+              'grad_norm': 10,  # 0.5 alternatively
               'critic_lr': 1e-3,
               'actor_lr': 3e-4,
               'aux_freq': 32,
               'aux_iterations': 3,
               'gae_lambda': 0.95,
-              'batch_size': 64,
-              # 'value_clip': 0.4,
-              'value_clip': None,
+              'batch_size': 32,
+              'value_clip': None,  # 0.4 alternatively
               'entropy_decay': 0.999,
               'use_wandb': True,
               'discount_factor': 0.99,
@@ -31,7 +30,7 @@ if __name__ == '__main__':
     FRAMES_TO_STACK = 4
     FRAMES_TO_SKIP = 4
     SEED = 1337
-    NUM_TIMESTEPS = int(1e7)
+    NUM_TIMESTEPS = int(2.5e7)
 
     environment.seed_everything(SEED)
     env = environment.create_env(config['height'], config['width'])

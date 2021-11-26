@@ -28,13 +28,13 @@ class Agent:
         self.actor_opt = optim.Adam(self.actor.parameters(),
                                     lr=config['actor_lr'])
         self.critic_opt = optim.Adam(self.critic.parameters(),
-                                    lr=config['critic_lr'])
+                                     lr=config['critic_lr'])
         self.contrast_opt = optim.Adam(self.contrast_net.parameters(),
-                                    lr=config['contrast_lr'])
+                                       lr=config['contrast_lr'])
         self.contrast_loss = ContrastiveLoss(config['temperature'])
         self.device = T.device(
             'cuda' if T.cuda.is_available() else 'cpu')
-            # TODO add data paralellism
+        # TODO add data paralellism
         self.config = config
         self.entropy_coeff = config['entropy_coeff']
         self.trajectory = Trajectory()
@@ -70,7 +70,6 @@ class Agent:
             self.aux_training_phase()
             self.steps = 0
 
-
     def ppo_training_phase(self):
         config = self.config
         loader = DataLoader(self.trajectory, batch_size=config[
@@ -104,7 +103,7 @@ class Agent:
         loader = DataLoader(state_dset, batch_size=config['batch_size'],
                             shuffle=True, pin_memory=True)
         total_contrast_loss = 0
-        
+
         for state_batch in loader:
             state_batch = state_batch.to(self.device)
             view_1 = self.data_aug(state_batch)
@@ -123,5 +122,3 @@ class Agent:
             total_contrast_loss += loss.item()
         total_contrast_loss /= len(loader)
         wandb.log({'total contrast loss': total_contrast_loss})
-        
-
