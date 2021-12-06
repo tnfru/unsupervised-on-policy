@@ -33,7 +33,7 @@ class Trajectory(T.utils.data.Dataset):
         self.aux_rets.extend(aux_rets)
 
     def fix_datatypes(self):
-        self.states = T.stack(self.states)
+        self.states = T.cat(self.states)
         self.actions = T.tensor(self.actions, dtype=T.long)
         self.dones = T.tensor(self.dones, dtype=T.int)
         self.log_probs = T.tensor(self.log_probs, dtype=T.float)

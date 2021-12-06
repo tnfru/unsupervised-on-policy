@@ -4,7 +4,7 @@ import warnings
 
 def init_logging(config, actor, critic, prefix):
     # initialize logging
-    wandb.init(project="cartpole", config=config)
+    wandb.init(project="EntropyPacman", config=config)
     wandb.watch(actor, log="all")
     wandb.watch(critic, log="all")
     wandb.run.name = prefix + '_' + wandb.run.name
@@ -38,3 +38,11 @@ def warn_about_aux_loss_scaling(aux_loss):
     warnings.warn(f'Aux Loss has value {aux_loss}. Consider '
                   f'scaling val_coeff down to not disrupt policy '
                   f'learning')
+
+def log_episode_length(timesteps):
+    wandb.log({
+        'episode_length': timesteps
+    })
+
+def log_contrast_loss(loss):
+    wandb.log({'contrastive loss': loss})
