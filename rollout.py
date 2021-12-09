@@ -9,6 +9,7 @@ from logger import log_episode_length
 from pretrain.reward import calc_pretrain_advantages
 from pretrain.state_data import StateData
 
+
 def run_episode(agent, trajectory, pretrain):
     states = []
     actions = []
@@ -67,9 +68,6 @@ def run_episode(agent, trajectory, pretrain):
                                           config['gae_lambda'])
     aux_rets = T.tensor(aux_vals, dtype=T.float) + aux_advantages
     advantages = normalize(advantages)
-
-    # TODO norm aux advantages too?
-    aux_advantages = normalize(aux_advantages)
 
     trajectory.append_timesteps(states=states,
                                 actions=actions,
