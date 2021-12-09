@@ -32,8 +32,10 @@ class ParticleReward:
             top_k_rewards, _ = particle_volumes.topk(self.top_k, sorted=True,
                                                      largest=False, dim=1)
 
+        normalize = False
         if normalize:
-            # TODO test normalization
+            # TODO replace with Running Mean Std
+            # because shifting mean changes agents will to live, also devide
             self.update_mean_estimate(top_k_rewards.reshape(-1, 1))
             top_k_rewards /= self.mean
 
@@ -43,7 +45,6 @@ class ParticleReward:
         return particle_rewards
 
     def update_mean_estimate(self, x):
-        # TODO replace with Running Mean Std
         batch_size = x.size(0)
         self.samples_done += batch_size
         difference = x.mean(dim=0) - self.mean
