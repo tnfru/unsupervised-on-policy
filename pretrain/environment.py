@@ -2,23 +2,8 @@ import ale_py  # necessary for gym enviornment creation
 import gym
 import torch as T
 import numpy as np
-import einops
 import random
 from supersuit import frame_stack_v1, resize_v0, clip_reward_v0
-
-
-def preprocess(img):
-    img = T.from_numpy(img) / 255
-    # TODO do this after transformation
-    # https://theaisummer.com/self-supervised-representation-learning-computer-vision/
-    # TODO norm to running mean of each channel
-
-    if len(img.shape) == 3:  # if no fourth dim, batch size is missing
-        img = einops.rearrange(img, 'h w c -> c h w')
-
-    else:
-        img = einops.rearrange(img, 'b h w c -> b c h w')
-    return img
 
 
 def create_env(config, name='MsPacman', render=None):
