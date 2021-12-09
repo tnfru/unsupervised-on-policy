@@ -25,7 +25,7 @@ if __name__ == '__main__':
               'width': 84,
               'contrast_lr': 3e-3,
               'temperature': 0.1,
-              'contrast_head_dim': 5,
+              'contrast_head_dim': 15,
               'frames_to_skip': 4,
               'frames_to_stack': 4
               }
@@ -33,11 +33,13 @@ if __name__ == '__main__':
     FRAMES_TO_STACK = 4
     FRAMES_TO_SKIP = 4
     SEED = 1337
-    NUM_TIMESTEPS = int(2.5e7)
+    NUM_TIMESTEPS = int(25e6)
 
     # TODO Terminal on loss of life
     # TODO compare Adam with LARS optimizer vs AdamW
+    # TODO vectorized envs
     # TODO image normalization
+    # TODO save model
 
     environment.seed_everything(SEED)
     env = environment.create_env(config)
