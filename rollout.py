@@ -21,12 +21,13 @@ def run_episode(agent, trajectory, pretrain):
     log_dists = []
 
     state = agent.env.reset()
+    done = False
 
     max_lives = agent.env.unwrapped.ale.lives()
 
     lives = max_lives
 
-    while not lives == 0:
+    while not (lives == 0 and done):
         state = T.tensor(state, dtype=T.float, device=agent.device)
         state = rearrange(state, 'h w c -> 1 c h w')
         action, log_prob, aux_val, log_dist = agent.get_action(state)
