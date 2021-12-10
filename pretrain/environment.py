@@ -1,4 +1,3 @@
-# import ale_py  # necessary for gym enviornment creation
 import gym
 import torch as T
 import numpy as np
