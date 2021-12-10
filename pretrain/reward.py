@@ -1,9 +1,5 @@
 import torch as T
-import torch.nn as nn
-import torch.nn.functional as F
 from torch.utils.data import DataLoader
-
-from pretrain.state_data import StateData
 
 
 class ParticleReward:
@@ -52,7 +48,7 @@ class ParticleReward:
 
 
 @T.no_grad()
-def calc_pretrain_advantages(agent, state_set):
+def calc_pretrain_rewards(agent, state_set):
     loader = DataLoader(state_set, batch_size=agent.config[
         'batch_size'], shuffle=False, pin_memory=True, drop_last=False)
     # Necessary because last batch might not have enough to find the

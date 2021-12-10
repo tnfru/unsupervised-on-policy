@@ -5,8 +5,8 @@ from einops import rearrange
 
 from preprocessing import normalize
 from utils import calculate_advantages
-from logger import log_episode_length
-from pretrain.reward import calc_pretrain_advantages
+from logger import log_episode_length, log_particle_reward
+from pretrain.reward import calc_pretrain_rewards
 from pretrain.state_data import StateData
 
 
@@ -20,10 +20,13 @@ def run_episode(agent, trajectory, pretrain):
     aux_vals = []
     log_dists = []
 
-    done = False
     state = agent.env.reset()
 
-    while not done:
+    max_lives = agent.env.unwrapped.ale.lives()
+
+    lives = max_lives
+
+    while not lives == 0:
         state = T.tensor(state, dtype=T.float, device=agent.device)
         state = rearrange(state, 'h w c -> 1 c h w')
         action, log_prob, aux_val, log_dist = agent.get_action(state)
@@ -41,29 +44,32 @@ def run_episode(agent, trajectory, pretrain):
         log_dists.append(log_dist)
 
         state = next_state
+        lives = agent.env.unwrapped.ale.lives()
 
     if agent.use_wandb:
+        # TODO add reward per life
         wandb.log({'reward': np.sum(rewards)})
 
     if pretrain:
         state_dset = StateData()
         state_dset.append_states(states)
         state_dset.fix_datatypes()
-        rewards = calc_pretrain_advantages(agent, state_dset)
+        rewards = calc_pretrain_rewards(agent, state_dset)
 
         if agent.use_wandb:
-            wandb.log({'particle reward sum': T.sum(rewards)})
-            wandb.log({'particle reward mean': T.mean(rewards)})
+            log_particle_reward(rewards)
 
     config = agent.config
 
     advantages = calculate_advantages(rewards,
                                       state_vals,
+                                      dones,
                                       config['discount_factor'],
                                       config['gae_lambda'])
     expected_returns = T.tensor(state_vals, dtype=T.float) + advantages
     aux_advantages = calculate_advantages(rewards,
                                           aux_vals,
+                                          dones,
                                           config['discount_factor'],
                                           config['gae_lambda'])
     aux_rets = T.tensor(aux_vals, dtype=T.float) + aux_advantages

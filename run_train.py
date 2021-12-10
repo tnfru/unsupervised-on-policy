@@ -33,7 +33,7 @@ if __name__ == '__main__':
     FRAMES_TO_STACK = 4
     FRAMES_TO_SKIP = 4
     SEED = 1337
-    NUM_TIMESTEPS = int(25e6)
+    NUM_TIMESTEPS = 250_000_000
 
     # TODO Terminal on loss of life
     # TODO compare Adam with LARS optimizer vs AdamW
