@@ -6,9 +6,7 @@ from einops.layers.torch import Rearrange
 
 
 class ContrastiveLearner(nn.Module):
-    def __init__(self, stacked_frames, out_dim, hidden_dim=1024,
-                 power_iters=5):
-        # TODO test spectral normalization, power_iters = 5
+    def __init__(self, stacked_frames, out_dim, power_iters=5):
         super(ContrastiveLearner, self).__init__()
         self.device = T.device('cuda' if T.cuda.is_available() else 'cpu')
         self.to(self.device)
@@ -38,10 +36,10 @@ class ContrastiveLearner(nn.Module):
         )
 
         self.head = nn.Sequential(
-            nn.Linear(3136, hidden_dim),  # 3136 is output dim after conv
-            nn.LayerNorm(hidden_dim),
+            nn.Linear(3136, 15),  # 3136 is output dim after conv
+            nn.LayerNorm(15),
             nn.Tanh(),
-            nn.Linear(hidden_dim, out_dim)
+            nn.Linear(15, out_dim)
         )
         self.device = T.device('cuda' if T.cuda.is_available() else 'cpu')
         self.to(self.device)

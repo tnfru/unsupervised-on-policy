@@ -25,7 +25,7 @@ if __name__ == '__main__':
               'width': 84,
               'contrast_lr': 3e-3,
               'temperature': 0.1,
-              'contrast_head_dim': 15,
+              'contrast_head_dim': 5,
               'frames_to_skip': 4,
               'frames_to_stack': 4
               }
