@@ -4,8 +4,7 @@ import torch as T
 import numpy as np
 import random
 from supersuit import frame_stack_v1, resize_v0, clip_reward_v0
-from stable_baselines3.common.atari_wrappers import EpisodicLifeEnv, \
-    NoopResetEnv
+from stable_baselines3.common.atari_wrappers import EpisodicLifeEnv
 
 
 def create_env(config, name='MsPacman', render=None):
@@ -24,7 +23,6 @@ def create_env(config, name='MsPacman', render=None):
     env = frame_stack_v1(env, config['frames_to_stack'])
 
     env = EpisodicLifeEnv(env)
-    env = NoopResetEnv(env)  # TODO evaluate this
 
     return env
 
