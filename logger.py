@@ -1,5 +1,6 @@
 import wandb
 import warnings
+import torch as T
 
 
 def init_logging(config, actor, critic, prefix):
@@ -39,10 +40,17 @@ def warn_about_aux_loss_scaling(aux_loss):
                   f'scaling val_coeff down to not disrupt policy '
                   f'learning')
 
+
 def log_episode_length(timesteps):
     wandb.log({
         'episode_length': timesteps
     })
 
+
 def log_contrast_loss(loss):
     wandb.log({'contrastive loss': loss})
+
+
+def log_particle_reward(rewards):
+    wandb.log({'particle reward sum': T.sum(rewards)})
+    wandb.log({'particle reward mean': T.mean(rewards)})

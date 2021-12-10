@@ -33,11 +33,13 @@ if __name__ == '__main__':
     FRAMES_TO_STACK = 4
     FRAMES_TO_SKIP = 4
     SEED = 1337
-    NUM_TIMESTEPS = int(2.5e7)
+    NUM_TIMESTEPS = 250_000_000
 
     # TODO Terminal on loss of life
     # TODO compare Adam with LARS optimizer vs AdamW
+    # TODO vectorized envs
     # TODO image normalization
+    # TODO save model
 
     environment.seed_everything(SEED)
     env = environment.create_env(config)

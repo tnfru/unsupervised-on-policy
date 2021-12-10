@@ -25,7 +25,8 @@ class Agent:
         self.batch_size = config['batch_size']
         self.actor = PPG(action_dim, state_dim)
         self.critic = CriticNet(state_dim)
-        self.contrast_net = ContrastiveLearner(state_dim)
+        self.contrast_net = ContrastiveLearner(state_dim, out_dim=config[
+            'contrast_head_dim'])
         self.actor_opt = optim.Adam(self.actor.parameters(),
                                     lr=config['actor_lr'])
         self.critic_opt = optim.Adam(self.critic.parameters(),

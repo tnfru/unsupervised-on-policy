@@ -1,24 +1,9 @@
-import ale_py  # necessary for gym enviornment creation
 import gym
 import torch as T
 import numpy as np
-import einops
 import random
 from supersuit import frame_stack_v1, resize_v0, clip_reward_v0
-
-
-def preprocess(img):
-    img = T.from_numpy(img) / 255
-    # TODO do this after transformation
-    # https://theaisummer.com/self-supervised-representation-learning-computer-vision/
-    # TODO norm to running mean of each channel
-
-    if len(img.shape) == 3:  # if no fourth dim, batch size is missing
-        img = einops.rearrange(img, 'h w c -> c h w')
-
-    else:
-        img = einops.rearrange(img, 'b h w c -> b c h w')
-    return img
+from stable_baselines3.common.atari_wrappers import EpisodicLifeEnv
 
 
 def create_env(config, name='MsPacman', render=None):
@@ -27,7 +12,7 @@ def create_env(config, name='MsPacman', render=None):
                    frameskip=config['frames_to_skip'],  # frame skip
                    mode=0,  # game mode, see Machado et al. 2018
                    difficulty=0,  # game difficulty, see Machado et al. 2018
-                   repeat_action_probability=0.25,  # Sticky action probability
+                   repeat_action_probability=0.0,  # Sticky action probability
                    full_action_space=True,  # Use all actions
                    render_mode=render  # None | human | rgb_array
                    )
@@ -35,6 +20,8 @@ def create_env(config, name='MsPacman', render=None):
     env = clip_reward_v0(env, lower_bound=-1, upper_bound=1)
     env = resize_v0(env, config['height'], config['width'], linear_interp=True)
     env = frame_stack_v1(env, config['frames_to_stack'])
+
+    env = EpisodicLifeEnv(env)
 
     return env
 
