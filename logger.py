@@ -52,5 +52,14 @@ def log_contrast_loss(loss):
 
 
 def log_particle_reward(rewards):
-    wandb.log({'particle reward sum': T.sum(rewards)})
-    wandb.log({'particle reward mean': T.mean(rewards)})
+    wandb.log({
+        'particle reward sum': T.sum(rewards),
+        'particle reward mean': T.mean(rewards)
+    })
+
+
+def log_running_estimates(mean, var):
+    wandb.log({
+        'running mean': mean,
+        'running std': var
+    })

@@ -6,6 +6,7 @@ from einops import rearrange
 from preprocessing import normalize
 from utils import calculate_advantages
 from logger import log_episode_length, log_particle_reward
+from logger import log_running_estimates
 from pretrain.reward import calc_pretrain_rewards
 from pretrain.state_data import StateData
 
@@ -48,7 +49,7 @@ def run_episode(agent, trajectory, pretrain):
         lives = agent.env.unwrapped.ale.lives()
 
     if agent.use_wandb:
-        # TODO add reward per life
+        # TODO log reward per life
         wandb.log({'reward': np.sum(rewards)})
 
     if pretrain:
@@ -59,6 +60,9 @@ def run_episode(agent, trajectory, pretrain):
 
         if agent.use_wandb:
             log_particle_reward(rewards)
+            mean = agent.reward_function.mean
+            var = agent.reward_function.var
+            log_running_estimates(mean, var)
 
     config = agent.config
 

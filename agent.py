@@ -76,6 +76,7 @@ class Agent:
         config = self.config
         loader = DataLoader(self.trajectory, batch_size=config[
             'batch_size'], shuffle=True, pin_memory=True, drop_last=True)
+        # TODO is drop_last necessary?
 
         for epoch in range(config['train_iterations']):
             train_ppo_epoch(agent=self, loader=loader)
