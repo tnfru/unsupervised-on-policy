@@ -61,5 +61,5 @@ def log_particle_reward(rewards):
 def log_running_estimates(mean, var):
     wandb.log({
         'running mean': mean,
-        'running std': var
+        'running var': var
     })
