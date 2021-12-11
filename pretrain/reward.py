@@ -4,8 +4,10 @@ from torch.utils.data import DataLoader
 
 class ParticleReward:
     # TODO test against author implementation
+    # TODO test Running Mean Std
     def __init__(self, top_k=5):
-        self.mean = 0
+        self.mean = 0.0
+        self.var = 1.0
         self.samples_done = 0
         self.c = 1
         self.top_k = top_k
@@ -28,23 +30,41 @@ class ParticleReward:
             top_k_rewards, _ = particle_volumes.topk(self.top_k, sorted=True,
                                                      largest=False, dim=1)
 
-        normalize = False
         if normalize:
-            # TODO replace with Running Mean Std
-            # because shifting mean changes agents will to live, also devide
-            self.update_mean_estimate(top_k_rewards.reshape(-1, 1))
-            top_k_rewards /= self.mean
+            self.update_estimates(top_k_rewards.reshape(-1, 1))
+            top_k_rewards /= self.var
 
         top_k_rewards = top_k_rewards.mean(dim=1)
         particle_rewards = T.log(self.c + top_k_rewards)
 
         return particle_rewards
 
-    def update_mean_estimate(self, x):
+    def update_estimates(self, x):
         batch_size = x.size(0)
-        self.samples_done += batch_size
         difference = x.mean(dim=0) - self.mean
-        self.mean += difference * batch_size / self.samples_done
+        total_samples_done = self.samples_done + batch_size
+        batch_var = x.var(dim=0)
+
+        self.update_mean_estimate(difference, batch_size, total_samples_done)
+        self.update_var_estimate(difference, batch_var, batch_size,
+                                 total_samples_done)
+
+        self.samples_done = total_samples_done
+
+    def update_var_estimate(self, difference, batch_var, batch_size,
+                            total_samples_done):
+        # https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
+        var_so_far = self.var * self.samples_done
+        var_batch = batch_var * batch_size
+
+        scaled_difference = T.square(
+            difference) * batch_size * self.samples_done / total_samples_done
+
+        combined_vars = var_so_far + var_batch + scaled_difference
+        self.var = combined_vars / total_samples_done
+
+    def update_mean_estimate(self, difference, batch_size, total_samples_done):
+        self.mean = self.mean + difference * batch_size / total_samples_done
 
 
 @T.no_grad()
