@@ -29,7 +29,7 @@ def train_aux_batch(agent, states, expected_returns, old_log_probs,
                                     expected_returns=expected_returns,
                                     is_aux_epoch=True,
                                     value_clip=config['value_clip'])
-    aux_value_loss *= config['val_coeff']
+    aux_value_loss = aux_value_loss * config['val_coeff']
 
     if aux_value_loss > agent.AUX_WARN_THRESHOLD:
         warn_about_aux_loss_scaling(aux_value_loss)

@@ -51,10 +51,12 @@ def log_contrast_loss(loss):
     wandb.log({'contrastive loss': loss})
 
 
-def log_particle_reward(rewards):
+def log_particle_reward(rewards, var):
     wandb.log({
         'particle reward sum': T.sum(rewards),
-        'particle reward mean': T.mean(rewards)
+        'particle reward mean': T.mean(rewards),
+        'particle reward unnormalized': var * T.mean(rewards),
+        'particle reward sum unnormalized': var * T.sum(rewards)
     })
 
 

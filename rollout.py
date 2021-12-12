@@ -59,9 +59,9 @@ def run_episode(agent, trajectory, pretrain):
         rewards = calc_pretrain_rewards(agent, state_dset)
 
         if agent.use_wandb:
-            log_particle_reward(rewards)
             mean = agent.reward_function.mean
             var = agent.reward_function.var
+            log_particle_reward(rewards, var)
             log_running_estimates(mean, var)
 
     config = agent.config
