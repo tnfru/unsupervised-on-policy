@@ -3,11 +3,12 @@ import warnings
 import torch as T
 
 
-def init_logging(config, actor, critic, prefix):
+def init_logging(config, agent, prefix):
     # initialize logging
     wandb.init(project="EntropyPacman", config=config)
-    wandb.watch(actor, log="all")
-    wandb.watch(critic, log="all")
+    wandb.watch(agent.actor, log="all")
+    wandb.watch(agent.critic, log="all")
+    wandb.watch(agent.contrast_net, log='all')
     wandb.run.name = prefix + '_' + wandb.run.name
 
 

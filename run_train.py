@@ -27,15 +27,15 @@ if __name__ == '__main__':
               'temperature': 0.1,
               'contrast_head_dim': 5,
               'frames_to_skip': 4,
-              'frames_to_stack': 4
+              'stacked_frames': 4
               }
 
     FRAMES_TO_STACK = 4
     FRAMES_TO_SKIP = 4
     SEED = 1337
     NUM_TIMESTEPS = 250_000_000
+    act_dim = 18
 
-    # TODO Terminal on loss of life
     # TODO compare Adam with LARS optimizer vs AdamW
     # TODO vectorized envs
     # TODO image normalization
@@ -43,6 +43,6 @@ if __name__ == '__main__':
 
     environment.seed_everything(SEED)
     env = environment.create_env(config)
-    agent = Agent(env, action_dim=18, config=config)
+    agent = Agent(env, action_dim=act_dim, config=config)
 
     run_timesteps(agent, NUM_TIMESTEPS, is_pretrain=True)

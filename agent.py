@@ -1,6 +1,5 @@
 import torch as T
 import torch.optim as optim
-import gym
 import wandb
 
 from torch.utils.data import DataLoader
@@ -17,26 +16,29 @@ from pretrain.contrastive_learning import ContrastiveLearner, ContrastiveLoss
 from pretrain.state_data import StateData
 
 
-class Agent:
+class Agent(T.nn.Module):
     def __init__(self, env, action_dim, config):
+        super().__init__()
         self.env = env
 
-        state_dim = config['frames_to_stack']
-        self.batch_size = config['batch_size']
-        self.actor = PPG(action_dim, state_dim)
-        self.critic = CriticNet(state_dim)
-        self.contrast_net = ContrastiveLearner(state_dim, out_dim=config[
-            'contrast_head_dim'])
-        self.actor_opt = optim.Adam(self.actor.parameters(),
-                                    lr=config['actor_lr'])
-        self.critic_opt = optim.Adam(self.critic.parameters(),
-                                     lr=config['critic_lr'])
-        self.contrast_opt = optim.Adam(self.contrast_net.parameters(),
-                                       lr=config['contrast_lr'])
-        self.contrast_loss = ContrastiveLoss(config['temperature'])
-        self.device = T.device(
-            'cuda' if T.cuda.is_available() else 'cpu')
-        # TODO add data paralellism
+        self.actor = PPG(action_dim, config['stacked_frames'])
+        self.actor_opt = optim.Adam(
+            self.actor.parameters(),
+            lr=config['actor_lr']
+        )
+        self.critic = CriticNet(config)
+        self.critic_opt = optim.Adam(
+            self.critic.parameters(),
+            lr=config['critic_lr']
+        )
+        self.contrast_net = ContrastiveLearner(config)
+        self.contrast_opt = optim.Adam(
+            self.contrast_net.parameters(),
+            lr=config['contrast_lr']
+        )
+        self.contrast_loss = ContrastiveLoss(config)
+        self.data_aug = DataAugment(config['height'], config['width'])
+
         self.config = config
         self.entropy_coeff = config['entropy_coeff']
         self.trajectory = Trajectory()
@@ -44,11 +46,14 @@ class Agent:
         self.steps = 0
         self.AUX_WARN_THRESHOLD = 100
         self.reward_function = ParticleReward()
-        self.data_aug = DataAugment(config['height'], config['width'])
+
+        self.device = T.device(
+            'cuda' if T.cuda.is_available() else 'cpu')
+        self.to(self.device)  # TODO add data paralellism
 
         if self.use_wandb:
-            prefix = 'Initial Runs'
-            init_logging(config, self.actor, self.critic, prefix)
+            prefix = 'Basic Implementation'
+            init_logging(config, self, prefix)
 
     @T.no_grad()
     def get_action(self, state):

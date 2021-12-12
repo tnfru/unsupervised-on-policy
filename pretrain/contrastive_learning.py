@@ -6,13 +6,13 @@ from einops.layers.torch import Rearrange
 
 
 class ContrastiveLearner(nn.Module):
-    def __init__(self, stacked_frames, out_dim, power_iters=5):
+    def __init__(self, config, power_iters=5):
         super(ContrastiveLearner, self).__init__()
         self.device = T.device('cuda' if T.cuda.is_available() else 'cpu')
         self.to(self.device)
 
         self.conv1 = spectral_norm(
-            nn.Conv2d(stacked_frames, 32, 8, stride=4),
+            nn.Conv2d(config['stacked_frames'], 32, 8, stride=4),
             n_power_iterations=power_iters,
         )
 
@@ -39,7 +39,7 @@ class ContrastiveLearner(nn.Module):
             nn.Linear(3136, 15),  # 3136 is output dim after conv
             nn.LayerNorm(15),
             nn.Tanh(),
-            nn.Linear(15, out_dim)
+            nn.Linear(15, config['contrast_head_dim'])
         )
         self.device = T.device('cuda' if T.cuda.is_available() else 'cpu')
         self.to(self.device)
@@ -55,9 +55,9 @@ class ContrastiveLearner(nn.Module):
 
 
 class ContrastiveLoss(nn.Module):
-    def __init__(self, temperature, num_views=2):
+    def __init__(self, config, num_views=2):
         super().__init__()
-        self.temp = temperature
+        self.temp = config['temperature']
         self.num_views = num_views
         self.criterion = nn.CrossEntropyLoss()
 
@@ -65,24 +65,24 @@ class ContrastiveLoss(nn.Module):
 
         self.to(self.device)
 
-    def forward(self, proj_1, proj_2):
-        bs = proj_1.size(0)
+    def forward(self, view_1, view_2):
+        bs = view_1.size(0)
         dim = bs * self.num_views
         mask = T.eye(dim, dtype=T.bool, device=self.device)
 
-        x = T.cat([proj_1, proj_2])
+        x = T.cat([view_1, view_2])
         x = F.normalize(x, dim=1)
 
         similarity = x @ x.T  # Diag is pair with self, diag + bs positive pair
-        similarity = similarity[~mask].view(dim, -1)  # drop all self pairs
+        similarity = drop_self_pairs(similarity, ~mask, dim)
         similarity = similarity / self.temp
 
         label = T.cat([T.arange(bs) for _ in range(self.num_views)])
         label = label.unsqueeze(0) == label.unsqueeze(1)
-        label = label[~mask].view(dim, -1)  # drop all self pairs
+        label = drop_self_pairs(label, ~mask, dim)
 
-        positive = similarity[label].view(dim, -1)
-        negative = similarity[~label].view(dim, -1)
+        positive = drop_self_pairs(similarity, label, dim)
+        negative = drop_self_pairs(similarity, ~label, dim)
 
         similarity_scores = T.cat([positive, negative], dim=1)
         positive_pair_idx = T.zeros(dim, dtype=T.long, device=self.device)
@@ -90,3 +90,7 @@ class ContrastiveLoss(nn.Module):
         loss = self.criterion(similarity_scores, positive_pair_idx)
 
         return loss
+
+
+def drop_self_pairs(x, pair_idx, dim):
+    return x[pair_idx].view(dim, -1)
