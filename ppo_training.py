@@ -1,5 +1,4 @@
 import torch as T
-import wandb
 from torch.distributions.categorical import Categorical
 
 from utils import data_to_device, approx_kl_div, do_gradient_step

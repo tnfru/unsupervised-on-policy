@@ -12,7 +12,7 @@ if __name__ == '__main__':
               'entropy_coeff': 0.01,
               'grad_norm': 10,  # 0.5 alternatively
               'critic_lr': 1e-3,
-              'actor_lr': 3e-4,
+              'actor_lr': 3e-4,  # Paper val 1e-4 while pre-Training
               'aux_freq': 32,
               'aux_iterations': 3,
               'gae_lambda': 0.95,
@@ -36,10 +36,14 @@ if __name__ == '__main__':
     NUM_TIMESTEPS = 250_000_000
     act_dim = 18
 
-    # TODO compare Adam with LARS optimizer vs AdamW
-    # TODO vectorized envs
-    # TODO image normalization
     # TODO save model
+    # TODO vectorized envs
+    # TODO add data paralellism
+
+    # TODO image normalization
+    # TODO test original paper architecture instead of gloabl avg pool
+
+    # TODO compare Adam with LARS optimizer vs AdamW
 
     environment.seed_everything(SEED)
     env = environment.create_env(config)

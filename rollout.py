@@ -53,8 +53,7 @@ def run_episode(agent, trajectory, pretrain):
         wandb.log({'reward': np.sum(rewards)})
 
     if pretrain:
-        state_dset = StateData()
-        state_dset.append_states(states)
+        state_dset = StateData(states)
         state_dset.fix_datatypes()
         rewards = calc_pretrain_rewards(agent, state_dset)
 

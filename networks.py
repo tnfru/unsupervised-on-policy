@@ -23,19 +23,24 @@ class CriticNet(nn.Module):
             nn.BatchNorm2d(128),
             nn.ReLU(inplace=True)
         )
+
+        self.backbone = nn.Sequential(
+            self.conv1,
+            self.conv2,
+            self.conv3
+        )
+
         self.head = nn.Sequential(
             nn.Linear(128, 1)
         )
 
         self.device = torch.device(
-            'cuda:0' if torch.cuda.is_available() else 'cpu')
+            'cuda' if torch.cuda.is_available() else 'cpu')
         self.to(self.device)
 
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.conv3(x)
-        x = reduce(x, 'bs c h w -> bs c', 'mean')  # global avg pool
+        x = self.backbone(x)
+        x = global_avg_pool(x)
         x = self.head(x)
 
         return x
@@ -77,13 +82,17 @@ class PPG(nn.Module):
         )
 
         self.device = torch.device(
-            'cuda:0' if torch.cuda.is_available() else 'cpu')
+            'cuda' if torch.cuda.is_available() else 'cpu')
         self.to(self.device)
 
     def forward(self, x):
         x = self.backbone(x)
-        x = reduce(x, 'bs c h w -> bs c', 'mean')  # global avg pool
+        x = global_avg_pool(x)
         action_values = self.action_head(x)
         state_values = self.val_head(x)
 
         return action_values, state_values
+
+
+def global_avg_pool(values):
+    return reduce(values, 'bs c h w -> bs c', 'mean')

@@ -2,8 +2,9 @@ import torch as T
 
 
 class StateData(T.utils.data.Dataset):
-    def __init__(self):
+    def __init__(self, states):
         self.states = []
+        self.append_states(states)
 
     def __len__(self):
         return len(self.states)

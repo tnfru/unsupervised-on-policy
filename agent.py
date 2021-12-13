@@ -37,19 +37,19 @@ class Agent(T.nn.Module):
             lr=config['contrast_lr']
         )
         self.contrast_loss = ContrastiveLoss(config)
-        self.data_aug = DataAugment(config['height'], config['width'])
+        self.data_aug = DataAugment(config)
+        self.reward_function = ParticleReward()
+        self.trajectory = Trajectory()
 
         self.config = config
         self.entropy_coeff = config['entropy_coeff']
-        self.trajectory = Trajectory()
         self.use_wandb = config['use_wandb']
-        self.steps = 0
         self.AUX_WARN_THRESHOLD = 100
-        self.reward_function = ParticleReward()
+        self.steps = 0
 
         self.device = T.device(
             'cuda' if T.cuda.is_available() else 'cpu')
-        self.to(self.device)  # TODO add data paralellism
+        self.to(self.device)
 
         if self.use_wandb:
             prefix = 'Basic Implementation'
@@ -67,34 +67,30 @@ class Agent(T.nn.Module):
         return action.item(), log_prob, aux_value.item(), log_dist
 
     def learn(self, is_pretrain):
-        config = self.config
         if is_pretrain:
             self.contrast_training_phase()
         self.ppo_training_phase()
-        self.steps += config['train_iterations']
+        self.steps += self.config['train_iterations']
 
-        if self.steps >= config['aux_freq']:
+        if self.steps >= self.config['aux_freq']:
             self.aux_training_phase()
             self.steps = 0
 
     def ppo_training_phase(self):
-        config = self.config
-        loader = DataLoader(self.trajectory, batch_size=config[
-            'batch_size'], shuffle=True, pin_memory=True, drop_last=True)
+        loader = get_loader(dset=self.trajectory, config=self.config,
+                            drop_last=True)
         # TODO is drop_last necessary?
 
-        for epoch in range(config['train_iterations']):
+        for epoch in range(self.config['train_iterations']):
             train_ppo_epoch(agent=self, loader=loader)
-            self.entropy_coeff *= config['entropy_decay']
+            self.entropy_coeff *= self.config['entropy_decay']
 
     def aux_training_phase(self):
-        config = self.config
         self.trajectory.is_aux_epoch = True
 
-        loader = DataLoader(self.trajectory, batch_size=config[
-            'batch_size'], shuffle=True, pin_memory=True)
+        loader = get_loader(dset=self.trajectory, config=self.config)
 
-        for aux_epoch in range(config['aux_iterations']):
+        for aux_epoch in range(self.config['aux_iterations']):
             train_aux_epoch(agent=self, loader=loader)
         self.trajectory.is_aux_epoch = False
 
@@ -102,14 +98,9 @@ class Agent(T.nn.Module):
         self.trajectory = Trajectory()
 
     def contrast_training_phase(self):
-        config = self.config
-
         states = self.trajectory.states
-        state_dset = StateData()
-        state_dset.append_states(states)
-
-        loader = DataLoader(state_dset, batch_size=config['batch_size'],
-                            shuffle=True, pin_memory=True)
+        state_dset = StateData(states)
+        loader = self.get_loader(dset=state_dset, config=self.config)
         total_contrast_loss = 0
 
         for state_batch in loader:
@@ -129,4 +120,11 @@ class Agent(T.nn.Module):
             log_contrast_loss(loss.item())
             total_contrast_loss += loss.item()
         total_contrast_loss /= len(loader)
-        wandb.log({'total contrast loss': total_contrast_loss})
+
+        if self.use_wandb:
+            wandb.log({'total contrast loss': total_contrast_loss})
+
+
+def get_loader(dset, config, drop_last=False):
+    return DataLoader(dset, batch_size=config['batch_size'],
+                      shuffle=True, pin_memory=True, drop_last=drop_last)
