@@ -100,7 +100,7 @@ class Agent(T.nn.Module):
     def contrast_training_phase(self):
         states = self.trajectory.states
         state_dset = StateData(states)
-        loader = self.get_loader(dset=state_dset, config=self.config)
+        loader = get_loader(dset=state_dset, config=self.config)
         total_contrast_loss = 0
 
         for state_batch in loader:
