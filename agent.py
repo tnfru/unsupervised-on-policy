@@ -108,10 +108,10 @@ class Agent(T.nn.Module):
             view_1 = self.data_aug(state_batch)
             view_2 = self.data_aug(state_batch)
 
-            representation_1 = self.contrast_net.project(view_1)
-            representation_2 = self.contrast_net.project(view_2)
+            projection_1 = self.contrast_net.project(view_1)
+            projection_2 = self.contrast_net.project(view_2)
 
-            loss = self.contrast_loss(representation_1, representation_2)
+            loss = self.contrast_loss(projection_1, projection_2)
 
             self.contrast_opt.zero_grad()
             loss.backward()

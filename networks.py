@@ -1,4 +1,4 @@
-import torch
+import torch as T
 import torch.nn as nn
 from einops import reduce
 
@@ -34,8 +34,8 @@ class CriticNet(nn.Module):
             nn.Linear(128, 1)
         )
 
-        self.device = torch.device(
-            'cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = T.device(
+            'cuda' if T.cuda.is_available() else 'cpu')
         self.to(self.device)
 
     def forward(self, x):
@@ -81,8 +81,8 @@ class PPG(nn.Module):
             nn.Linear(128, 1)
         )
 
-        self.device = torch.device(
-            'cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = T.device(
+            'cuda' if T.cuda.is_available() else 'cpu')
         self.to(self.device)
 
     def forward(self, x):

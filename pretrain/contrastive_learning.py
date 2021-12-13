@@ -6,8 +6,8 @@ from einops.layers.torch import Rearrange
 
 
 class ContrastiveLearner(nn.Module):
-    def __init__(self, config, power_iters=5):
-        super(ContrastiveLearner, self).__init__()
+    def __init__(self, config, hidden_dim=128, head_dim=64, power_iters=5):
+        super().__init__()
         self.device = T.device('cuda' if T.cuda.is_available() else 'cpu')
         self.to(self.device)
 
@@ -25,21 +25,24 @@ class ContrastiveLearner(nn.Module):
             nn.Conv2d(64, 64, 3),
             n_power_iterations=power_iters,
         )
+        # TODO 3136 is output dim after conv, but should it be 1024?
         self.backbone = nn.Sequential(
             self.conv1,
-            nn.ELU(),
+            nn.ELU(inplace=True),
             self.conv2,
-            nn.ELU(),
+            nn.ELU(inplace=True),
             self.conv3,
-            nn.ELU(),
-            Rearrange('b c h w -> b (c h w)')
+            nn.ELU(inplace=True),
+            Rearrange('b c h w -> b (c h w)'),
+            nn.Linear(3136, 15),
+            nn.LayerNorm(15),
+            nn.Tanh(),
         )
 
         self.head = nn.Sequential(
-            nn.Linear(3136, 15),  # 3136 is output dim after conv
-            nn.LayerNorm(15),
-            nn.Tanh(),
-            nn.Linear(15, config['contrast_head_dim'])
+            nn.Linear(15, hidden_dim),
+            nn.ELU(inplace=True), # TODO check DrQ for their activation here
+            nn.Linear(hidden_dim, head_dim)
         )
         self.device = T.device('cuda' if T.cuda.is_available() else 'cpu')
         self.to(self.device)
