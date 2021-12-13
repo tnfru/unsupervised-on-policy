@@ -78,7 +78,7 @@ class Agent(T.nn.Module):
 
     def ppo_training_phase(self):
         loader = get_loader(dset=self.trajectory, config=self.config,
-                            drop_last=True)
+                            drop_last=False)
         # TODO is drop_last necessary?
 
         for epoch in range(self.config['train_iterations']):
@@ -117,7 +117,8 @@ class Agent(T.nn.Module):
             loss.backward()
             self.contrast_opt.step()
 
-            log_contrast_loss(loss.item())
+            if self.use_wandb:
+                log_contrast_loss(loss.item())
             total_contrast_loss += loss.item()
         total_contrast_loss /= len(loader)
 

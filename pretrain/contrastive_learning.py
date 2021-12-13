@@ -41,7 +41,7 @@ class ContrastiveLearner(nn.Module):
 
         self.head = nn.Sequential(
             nn.Linear(15, hidden_dim),
-            nn.ELU(inplace=True), # TODO check DrQ for their activation here
+            nn.ELU(inplace=True),  # TODO check DrQ for their activation here
             nn.Linear(hidden_dim, head_dim)
         )
         self.device = T.device('cuda' if T.cuda.is_available() else 'cpu')
