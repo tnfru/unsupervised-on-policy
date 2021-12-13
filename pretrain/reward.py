@@ -3,8 +3,6 @@ from torch.utils.data import DataLoader
 
 
 class ParticleReward:
-    # TODO test against author implementation
-    # TODO test Running Mean Std
     def __init__(self, top_k=5):
         self.mean = 0.0
         self.var = 1.0
@@ -32,7 +30,7 @@ class ParticleReward:
 
         if normalize:
             self.update_estimates(top_k_rewards.reshape(-1, 1))
-            top_k_rewards /= self.var
+            top_k_rewards /= self.mean
 
         top_k_rewards = top_k_rewards.mean(dim=1)
         particle_rewards = T.log(self.c + top_k_rewards)
@@ -78,8 +76,7 @@ def calc_pretrain_rewards(agent, state_set):
 
     for state_batch in loader:
         state_batch = state_batch.to(agent.device)
-        representations = agent.data_aug(state_batch)
-        representations = agent.contrast_net(representations)
+        representations = agent.contrast_net(state_batch)
         rewards = agent.reward_function.calculate_reward(representations)
 
         rewards = rewards.cpu()

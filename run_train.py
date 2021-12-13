@@ -16,16 +16,16 @@ if __name__ == '__main__':
               'aux_freq': 32,
               'aux_iterations': 3,
               'gae_lambda': 0.95,
-              'batch_size': 32,
+              'batch_size': 512,  # 512 while pretraining, 32 after
               'value_clip': None,  # 0.4 alternatively
               'entropy_decay': 0.999,
               'use_wandb': True,
               'discount_factor': 0.99,
               'height': 84,
               'width': 84,
-              'contrast_lr': 3e-3,
+              'contrast_lr': 1e-3,  # 3e-3 alt
               'temperature': 0.1,
-              'contrast_head_dim': 5,
+              'contrast_head_dim': 5,  # Unused value
               'frames_to_skip': 4,
               'stacked_frames': 4
               }
