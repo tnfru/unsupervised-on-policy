@@ -16,7 +16,7 @@ if __name__ == '__main__':
               'aux_freq': 32,
               'aux_iterations': 3,
               'gae_lambda': 0.95,
-              'batch_size': 256,  # 512 while pretraining, 32 after
+              'batch_size': 512,  # 512 while pretraining, 32 after
               'value_clip': None,  # 0.4 alternatively
               'entropy_decay': 0.999,
               'use_wandb': True,

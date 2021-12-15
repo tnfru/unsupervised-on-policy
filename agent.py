@@ -77,9 +77,7 @@ class Agent(T.nn.Module):
             self.steps = 0
 
     def ppo_training_phase(self):
-        loader = get_loader(dset=self.trajectory, config=self.config,
-                            drop_last=False)
-        # TODO is drop_last necessary?
+        loader = get_loader(dset=self.trajectory, config=self.config)
 
         for epoch in range(self.config['train_iterations']):
             train_ppo_epoch(agent=self, loader=loader)

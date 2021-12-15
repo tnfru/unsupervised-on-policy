@@ -69,8 +69,6 @@ class ParticleReward:
 def calc_pretrain_rewards(agent, state_set):
     loader = DataLoader(state_set, batch_size=agent.config[
         'batch_size'], shuffle=False, pin_memory=True, drop_last=False)
-    # Necessary because last batch might not have enough to find the
-    # kNN
 
     all_rewards = []
 
