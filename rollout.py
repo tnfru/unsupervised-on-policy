@@ -93,17 +93,18 @@ def run_episode(agent, trajectory, pretrain):
 
 
 def run_timesteps(agent, num_timesteps, is_pretrain):
-    timestep = 0
+    steps_done = 0
     agent.forget()
 
-    while timestep < num_timesteps:
+    while steps_done < num_timesteps:
         agent.trajectory = run_episode(agent, agent.trajectory, is_pretrain)
 
         if len(agent.trajectory) >= agent.config['rollout_length']:
-            timestep += len(agent.trajectory)
+            steps_done += len(agent.trajectory)
 
             if agent.config['use_wandb']:
                 log_episode_length(len(agent.trajectory))
+                wandb.log({'env steps': steps_done})
 
             agent.trajectory.fix_datatypes()
             agent.learn(is_pretrain=is_pretrain)
