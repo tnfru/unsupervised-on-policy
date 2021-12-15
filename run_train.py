@@ -1,4 +1,4 @@
-from agent import Agent
+from ppg.agent import Agent
 from rollout import run_timesteps
 import pretrain.environment as environment
 

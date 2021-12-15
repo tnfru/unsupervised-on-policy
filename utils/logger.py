@@ -1,6 +1,7 @@
 import wandb
 import warnings
 import torch as T
+import numpy as np
 
 
 def init_logging(config, agent, prefix):
@@ -42,14 +43,22 @@ def warn_about_aux_loss_scaling(aux_loss):
                   f'learning')
 
 
-def log_episode_length(timesteps):
+def log_episode_length(trajectory):
     wandb.log({
-        'episode_length': timesteps
+        'episode_length': len(trajectory)
     })
 
 
 def log_contrast_loss(loss):
     wandb.log({'contrastive loss': loss})
+
+
+def log_rewards(rewards):
+    wandb.log({'reward': np.sum(rewards)})
+
+
+def log_steps_done(steps):
+    wandb.log({'million env steps': steps / 1e6})
 
 
 def log_particle_reward(rewards, mean):

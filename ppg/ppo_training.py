@@ -1,9 +1,9 @@
 import torch as T
 from torch.distributions.categorical import Categorical
 
-from utils import data_to_device, approx_kl_div, do_gradient_step
-from logger import log_ppo
-from critic_training import train_critic_batch
+from utils.network_utils import data_to_device, approx_kl_div, do_gradient_step
+from utils.logger import log_ppo
+from ppg.critic_training import train_critic_batch
 
 
 def train_ppo_epoch(agent, loader):

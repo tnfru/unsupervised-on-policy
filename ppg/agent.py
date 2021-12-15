@@ -5,11 +5,11 @@ import wandb
 from torch.utils.data import DataLoader
 from torch.distributions.categorical import Categorical
 
-from networks import PPG, CriticNet
-from logger import init_logging, log_contrast_loss
-from trajectory import Trajectory
-from aux_training import train_aux_epoch
-from ppo_training import train_ppo_epoch
+from ppg.networks import PPG, CriticNet
+from utils.logger import init_logging, log_contrast_loss
+from ppg.trajectory import Trajectory
+from ppg.aux_training import train_aux_epoch
+from ppg.ppo_training import train_ppo_epoch
 from pretrain.reward import ParticleReward
 from pretrain.data_augmentation import DataAugment
 from pretrain.contrastive_learning import ContrastiveLearner, ContrastiveLoss

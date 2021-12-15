@@ -1,7 +1,7 @@
-from losses import value_loss_fun
-from logger import log_critic
+from ppg.losses import value_loss_fun
+from utils.logger import log_critic
 
-from utils import do_gradient_step
+from utils.network_utils import do_gradient_step
 
 
 def train_critic_batch(agent, states, expected_returns, old_state_values):
