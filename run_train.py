@@ -4,7 +4,7 @@ import pretrain.environment as environment
 
 if __name__ == '__main__':
     config = {'policy_clip': 0.25,
-              'kl_max': 0.05,
+              'kl_max': None,  # 0.05 used previously
               'beta': 1,
               'val_coeff': 1e-2,
               'rollout_length': 256,
