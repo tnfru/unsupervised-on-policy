@@ -3,6 +3,7 @@ import torch as T
 
 class Trajectory(T.utils.data.Dataset):
     def __init__(self):
+        #TODO call super
         self.states = []
         self.log_probs = []
         self.actions = []
