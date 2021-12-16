@@ -1,8 +1,9 @@
 from torch.distributions.categorical import Categorical
-from utils import data_to_device, approx_kl_div, do_gradient_step
-from losses import value_loss_fun
-from logger import warn_about_aux_loss_scaling, log_aux
-from critic_training import train_critic_batch
+
+from ppg.losses import value_loss_fun
+from ppg.critic_training import train_critic_batch
+from utils.network_utils import data_to_device, approx_kl_div, do_gradient_step
+from utils.logger import warn_about_aux_loss_scaling, log_aux
 
 
 def train_aux_epoch(agent, loader):
@@ -29,7 +30,7 @@ def train_aux_batch(agent, states, expected_returns, old_log_probs,
                                     expected_returns=expected_returns,
                                     is_aux_epoch=True,
                                     value_clip=config['value_clip'])
-    aux_value_loss *= config['val_coeff']
+    aux_value_loss = aux_value_loss * config['val_coeff']
 
     if aux_value_loss > agent.AUX_WARN_THRESHOLD:
         warn_about_aux_loss_scaling(aux_value_loss)
