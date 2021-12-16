@@ -14,22 +14,24 @@ def init_logging(config, agent, prefix):
 
 
 def log_ppo(entropy_loss, kl_div, kl_max):
-    exceeded = 1 if kl_div > kl_max else 0
+    if kl_max is None or kl_max < kl_div:
+        exceeded = 0
+    else:
+        exceeded = 1
     wandb.log({'entropy loss': entropy_loss,
                'kl div': kl_div.mean(),
                'kl_exceeded': exceeded})
 
 
 def log_aux(aux_values, aux_loss, kl_div, kl_max):
-    exceeded = 1 if kl_div > kl_max else 0
-    if exceeded == 1:
-        wandb.log({'aux kl_div': kl_div,
-                   'kl_exceeded': exceeded})
-    else:
+    if kl_max is None or kl_max < kl_div:
         wandb.log({'aux state value': aux_values.mean(),
                    'aux loss': aux_loss.mean(),
                    'aux kl_div': kl_div,
-                   'kl_exceeded': exceeded})
+                   'kl_exceeded': 0})
+    else:
+        wandb.log({'aux kl_div': kl_div,
+                   'kl_exceeded': 1})
 
 
 def log_critic(critic_loss, state_values):
