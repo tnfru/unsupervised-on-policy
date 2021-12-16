@@ -52,7 +52,7 @@ class Agent(T.nn.Module):
         self.to(self.device)
 
         if self.use_wandb:
-            prefix = 'Basic Implementation'
+            prefix = config['prefix']
             init_logging(config, self, prefix)
 
     @T.no_grad()
