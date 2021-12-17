@@ -102,3 +102,9 @@ def run_timesteps(agent, num_timesteps, is_pretrain):
             agent.trajectory.fix_datatypes()
             agent.learn(is_pretrain=is_pretrain)
             agent.forget()
+
+            import os
+            PATH = './saved_models'
+            os.makedirs(PATH, exist_ok=True)
+            PATH += f'/agent_{steps_done}.pt'
+            T.save(agent.state_dict(), PATH)
