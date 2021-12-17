@@ -106,5 +106,5 @@ def run_timesteps(agent, num_timesteps, is_pretrain):
             import os
             PATH = './saved_models'
             os.makedirs(PATH, exist_ok=True)
-            PATH += f'/agent_{steps_done}.pt'
+            PATH += f'/agent_latest.pt'
             T.save(agent.state_dict(), PATH)

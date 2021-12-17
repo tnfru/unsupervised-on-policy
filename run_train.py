@@ -40,6 +40,8 @@ if __name__ == '__main__':
     # TODO save model
     # TODO vectorized envs
     # TODO add data paralellism
+    # TODO swap contrast lr
+    # TODO noop reset for less false negative pairs
 
     # TODO image normalization
     # TODO test original paper architecture instead of gloabl avg pool

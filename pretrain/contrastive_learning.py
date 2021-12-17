@@ -43,6 +43,8 @@ class ContrastiveLearner(nn.Module):
             nn.Linear(15, hidden_dim),
             nn.ELU(inplace=True),  # TODO check DrQ for their activation here
             nn.Linear(hidden_dim, head_dim)
+            # TODO replace head dim with 5 if contrast not working
+            # and hidden dim wiht 1024
         )
         self.device = T.device('cuda' if T.cuda.is_available() else 'cpu')
         self.to(self.device)

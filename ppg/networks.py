@@ -8,19 +8,19 @@ class CriticNet(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.conv1 = nn.Sequential(
-            nn.Conv2d(config['stacked_frames'], 64, 3),
+            nn.Conv2d(config['stacked_frames'], 64, 3, bias=False),
             nn.BatchNorm2d(64),
             nn.ReLU(inplace=True)
         )
 
         self.conv2 = nn.Sequential(
-            nn.Conv2d(64, 64, 3),
+            nn.Conv2d(64, 64, 3, bias=False),
             nn.BatchNorm2d(64),
             nn.ReLU(inplace=True)
         )
 
         self.conv3 = nn.Sequential(
-            nn.Conv2d(64, 128, 3),
+            nn.Conv2d(64, 128, 3, bias=False),
             nn.BatchNorm2d(128),
             nn.ReLU(inplace=True)
         )
@@ -51,19 +51,19 @@ class PPG(nn.Module):
     def __init__(self, action_dim, state_dim):
         super().__init__()
         self.conv1 = nn.Sequential(
-            nn.Conv2d(state_dim, 64, 3),
+            nn.Conv2d(state_dim, 64, 3, bias=False),
             nn.BatchNorm2d(64),
             nn.ReLU(inplace=True)
         )
 
         self.conv2 = nn.Sequential(
-            nn.Conv2d(64, 64, 3),
+            nn.Conv2d(64, 64, 3, bias=False),
             nn.BatchNorm2d(64),
             nn.ReLU(inplace=True)
         )
 
         self.conv3 = nn.Sequential(
-            nn.Conv2d(64, 128, 3),
+            nn.Conv2d(64, 128, 3, bias=False),
             nn.BatchNorm2d(128),
             nn.ReLU(inplace=True)
         )
