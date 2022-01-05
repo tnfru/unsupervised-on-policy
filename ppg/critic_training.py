@@ -17,4 +17,4 @@ def train_critic_batch(agent, states, expected_returns, old_state_values):
         'grad_norm'])
 
     if agent.use_wandb:
-        log_critic(critic_loss, state_values)
+        log_critic(agent, critic_loss, state_values)

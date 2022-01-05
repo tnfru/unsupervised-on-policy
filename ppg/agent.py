@@ -6,7 +6,8 @@ from torch.utils.data import DataLoader
 from torch.distributions.categorical import Categorical
 
 from ppg.networks import PPG, CriticNet
-from utils.logger import init_logging, log_contrast_loss
+from utils.logger import init_logging, log_contrast_loss_batch, \
+    log_contrast_loss_epoch
 from ppg.trajectory import Trajectory
 from ppg.aux_training import train_aux_epoch
 from ppg.ppo_training import train_ppo_epoch
@@ -20,6 +21,7 @@ class Agent(T.nn.Module):
     def __init__(self, env, action_dim, config):
         super().__init__()
         self.env = env
+        self.metrics = {}
 
         self.actor = PPG(action_dim, config['stacked_frames'])
         self.actor_opt = optim.Adam(
@@ -116,12 +118,13 @@ class Agent(T.nn.Module):
             self.contrast_opt.step()
 
             if self.use_wandb:
-                log_contrast_loss(loss.item())
+                log_contrast_loss_batch(self, loss.item())
             total_contrast_loss += loss.item()
+
         total_contrast_loss /= len(loader)
 
         if self.use_wandb:
-            wandb.log({'total contrast loss': total_contrast_loss})
+            log_contrast_loss_epoch(self, total_contrast_loss)
 
 
 def get_loader(dset, config, drop_last=False):
