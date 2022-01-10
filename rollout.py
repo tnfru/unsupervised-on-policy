@@ -1,4 +1,6 @@
 import torch as T
+import os
+import wandb
 from einops import rearrange
 
 from ppg.gae import calculate_advantages
@@ -54,8 +56,8 @@ def run_episode(agent, trajectory, pretrain):
         rewards = calc_pretrain_rewards(agent, state_dset)
 
         if agent.use_wandb:
-            log_particle_reward(rewards, agent.reward_function.mean)
-            log_running_estimates(agent.reward_function.mean,
+            log_particle_reward(agent, rewards, agent.reward_function.mean)
+            log_running_estimates(agent, agent.reward_function.mean,
                                   agent.reward_function.var)
 
     advantages = calculate_advantages(rewards,
@@ -96,14 +98,16 @@ def run_timesteps(agent, num_timesteps, is_pretrain):
             steps_done += len(agent.trajectory)
 
             if agent.use_wandb:
-                log_episode_length(agent.trajectory)
-                log_steps_done(steps_done)
+                log_episode_length(agent, agent.trajectory)
+                log_steps_done(agent, steps_done)
 
             agent.trajectory.fix_datatypes()
             agent.learn(is_pretrain=is_pretrain)
+            if agent.use_wandb:
+                wandb.log(agent.metrics)
+                agent.metrics = {}
             agent.forget()
 
-            import os
             PATH = './saved_models'
             os.makedirs(PATH, exist_ok=True)
             PATH += f'/agent_latest.pt'
