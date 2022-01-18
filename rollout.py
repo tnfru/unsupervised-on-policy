@@ -107,8 +107,4 @@ def run_timesteps(agent, num_timesteps, is_pretrain):
                 wandb.log(agent.metrics)
                 agent.metrics = {}
             agent.forget()
-
-            PATH = './saved_models'
-            os.makedirs(PATH, exist_ok=True)
-            PATH += f'/agent_latest.pt'
-            T.save(agent.state_dict(), PATH)
+            agent.save()

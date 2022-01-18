@@ -34,19 +34,15 @@ if __name__ == '__main__':
     FRAMES_TO_STACK = 4
     FRAMES_TO_SKIP = 4
     SEED = 1337
-    NUM_TIMESTEPS = 250_000_000
+    NUM_TIMESTEPS = 4_000_000
     act_dim = 18
 
-    # TODO save model
+    # TODO test model save / load
     # TODO vectorized envs
     # TODO add data paralellism
-    # TODO swap contrast lr
     # TODO noop reset for less false negative pairs
 
     # TODO image normalization
-    # TODO test original paper architecture instead of gloabl avg pool
-
-    # TODO compare Adam with LARS optimizer vs AdamW
 
     environment.seed_everything(SEED)
     env = environment.create_env(config)

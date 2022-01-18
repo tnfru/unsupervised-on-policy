@@ -1,6 +1,6 @@
 import torch as T
 import torch.optim as optim
-import wandb
+import os
 
 from torch.utils.data import DataLoader
 from torch.distributions.categorical import Categorical
@@ -125,6 +125,12 @@ class Agent(T.nn.Module):
 
         if self.use_wandb:
             log_contrast_loss_epoch(self, total_contrast_loss)
+
+    def save(self):
+        PATH = './saved_models'
+        os.makedirs(PATH, exist_ok=True)
+        PATH += f'/agent_latest.pt'
+        T.save(self.state_dict(), PATH)
 
 
 def get_loader(dset, config, drop_last=False):
