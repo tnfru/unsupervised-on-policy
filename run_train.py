@@ -28,7 +28,7 @@ if __name__ == '__main__':
               'contrast_head_dim': 5,  # Unused value
               'frames_to_skip': 4,
               'stacked_frames': 4,
-              'prefix': 'LOGv0'
+              'prefix': 'Loadv0'
               }
 
     FRAMES_TO_STACK = 4
@@ -38,10 +38,6 @@ if __name__ == '__main__':
     act_dim = 18
 
     # TODO test model save / load
-    # TODO vectorized envs
-    # TODO add data paralellism
-    # TODO noop reset for less false negative pairs
-
     # TODO image normalization
 
     environment.seed_everything(SEED)
