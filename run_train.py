@@ -43,5 +43,6 @@ if __name__ == '__main__':
     environment.seed_everything(SEED)
     env = environment.create_env(config)
     agent = Agent(env, action_dim=act_dim, config=config)
+    agent.load()
 
     run_timesteps(agent, NUM_TIMESTEPS, is_pretrain=True)
