@@ -66,4 +66,4 @@ def run_timesteps(agent, num_timesteps, is_pretrain):
                 agent.log_metrics()
 
             agent.forget()
-            agent.save()
+            agent.save_model()

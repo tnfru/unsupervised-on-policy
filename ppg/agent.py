@@ -19,7 +19,7 @@ from utils.network_utils import get_loader
 
 
 class Agent(T.nn.Module):
-    def __init__(self, env, action_dim, config):
+    def __init__(self, env, action_dim, config, load=False):
         super().__init__()
         self.env = env
         self.metrics = {}
@@ -58,6 +58,9 @@ class Agent(T.nn.Module):
         if self.use_wandb:
             prefix = config['prefix']
             init_logging(config, self, prefix)
+
+        if load:
+            self.load_model()
 
     @T.no_grad()
     def get_action(self, state):
@@ -128,12 +131,12 @@ class Agent(T.nn.Module):
         if self.use_wandb:
             log_contrast_loss_epoch(self, total_contrast_loss)
 
-    def save(self):
+    def save_model(self):
         os.makedirs(self.path, exist_ok=True)
         PATH = self.path + '/agent_latest.pt'
         T.save(self.state_dict(), PATH)
 
-    def load(self):
+    def load_model(self):
         PATH = self.path + '/agent_latest.pt'
         self.load_state_dict(T.load(PATH))
 
