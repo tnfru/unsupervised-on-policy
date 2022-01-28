@@ -135,6 +135,7 @@ class Agent(T.nn.Module):
         os.makedirs(self.path, exist_ok=True)
         PATH = self.path + '/agent_latest.pt'
         T.save(self.state_dict(), PATH)
+        print(f'Model saved at {PATH}')
 
     def load_model(self):
         PATH = self.path + '/agent_latest.pt'
