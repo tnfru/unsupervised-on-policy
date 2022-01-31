@@ -15,7 +15,7 @@ from pretrain.reward import ParticleReward
 from pretrain.data_augmentation import DataAugment
 from pretrain.contrastive_learning import ContrastiveLearner, ContrastiveLoss
 from pretrain.state_data import StateData
-from utils.network_utils import get_loader
+from utils.network_utils import get_loader, do_gradient_step
 
 
 class Agent(T.nn.Module):
@@ -118,9 +118,8 @@ class Agent(T.nn.Module):
 
             loss = self.contrast_loss(projection_1, projection_2)
 
-            self.contrast_opt.zero_grad()
-            loss.backward()
-            self.contrast_opt.step()
+            do_gradient_step(self.contrast_net, self.contrast_opt, loss,
+                             self.config['grad_norm'])
 
             if self.use_wandb:
                 log_contrast_loss_batch(self, loss.item())

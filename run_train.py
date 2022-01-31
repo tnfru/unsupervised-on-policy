@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     # TODO image normalization
     # TODO batch size
-    # TODO actor lr
+    # TODO grad acc if uneven
 
     environment.seed_everything(SEED)
     env = environment.create_env(config)
