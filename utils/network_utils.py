@@ -11,6 +11,17 @@ def do_gradient_step(network, optimizer, objective, grad_norm,
     optimizer.step()
 
 
+def do_accumulated_gradient_step(network, optimizer, objective, config,
+                                 batch_idx, num_batches, retain_graph=False):
+    batches_to_acc = int(config['target_batch_size'] / config['batch_size'])
+    batches_until_step = batch_idx % batches_to_acc
+    is_last_batch = batch_idx == num_batches - 1
+
+    if batches_to_acc == 1 or batches_until_step == 0 or is_last_batch:
+        do_gradient_step(network, optimizer, objective, grad_norm=config[
+            'grad_norm'], retain_graph=retain_graph)
+
+
 def data_to_device(rollout_data, device):
     data_on_device = []
     for data in rollout_data:

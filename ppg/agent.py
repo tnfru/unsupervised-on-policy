@@ -15,11 +15,13 @@ from pretrain.reward import ParticleReward
 from pretrain.data_augmentation import DataAugment
 from pretrain.contrastive_learning import ContrastiveLearner, ContrastiveLoss
 from pretrain.state_data import StateData
-from utils.network_utils import get_loader, do_gradient_step
+from utils.network_utils import get_loader, do_gradient_step, \
+    do_accumulated_gradient_step
 
 
 class Agent(T.nn.Module):
-    def __init__(self, env, action_dim, config, load=False):
+    def __init__(self, env, action_dim, config, load=False,
+                 load_new_config=False):
         super().__init__()
         self.env = env
         self.metrics = {}
@@ -61,6 +63,9 @@ class Agent(T.nn.Module):
 
         if load:
             self.load_model()
+
+            if load_new_config:
+                self.config = config
 
     @T.no_grad()
     def get_action(self, state):
@@ -108,7 +113,7 @@ class Agent(T.nn.Module):
         loader = get_loader(dset=state_dset, config=self.config)
         total_contrast_loss = 0
 
-        for state_batch in loader:
+        for batch_idx, state_batch in enumerate(loader):
             state_batch = state_batch.to(self.device)
             view_1 = self.data_aug(state_batch)
             view_2 = self.data_aug(state_batch)
@@ -118,8 +123,11 @@ class Agent(T.nn.Module):
 
             loss = self.contrast_loss(projection_1, projection_2)
 
-            do_gradient_step(self.contrast_net, self.contrast_opt, loss,
-                             self.config['grad_norm'])
+            do_accumulated_gradient_step(self.contrast_net,
+                                         self.contrast_opt, loss,
+                                         self.config, batch_idx, len(loader))
+            # do_gradient_step(self.contrast_net, self.contrast_opt, loss,
+            #                 self.config['grad_norm'])
 
             if self.use_wandb:
                 log_contrast_loss_batch(self, loss.item())

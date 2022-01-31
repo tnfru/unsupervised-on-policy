@@ -2,22 +2,28 @@ import torch as T
 from torch.distributions.categorical import Categorical
 
 from utils.network_utils import data_to_device, approx_kl_div, do_gradient_step
+from utils.network_utils import do_accumulated_gradient_step
 from utils.logger import log_ppo
 from ppg.critic_training import train_critic_batch
 
 
 def train_ppo_epoch(agent, loader):
-    for rollout_data in loader:
+    num_batches = len(loader)
+
+    for batch_idx, rollout_data in enumerate(loader):
         states, actions, expected_returns, state_values, advantages, \
         log_probs = data_to_device(rollout_data, agent.device)
 
         expected_returns = expected_returns.unsqueeze(1)
 
-        train_ppo_batch(agent, states, actions, log_probs, advantages)
-        train_critic_batch(agent, states, expected_returns, state_values)
+        train_ppo_batch(agent, states, actions, log_probs, advantages,
+                        batch_idx, num_batches)
+        train_critic_batch(agent, states, expected_returns, state_values,
+                           batch_idx, num_batches)
 
 
-def train_ppo_batch(agent, states, actions, old_log_probs, advantages):
+def train_ppo_batch(agent, states, actions, old_log_probs, advantages,
+                    batch_idx, num_batches):
     config = agent.config
     action_probs, _ = agent.actor(states)
     action_dist = Categorical(logits=action_probs)
@@ -36,8 +42,11 @@ def train_ppo_batch(agent, states, actions, old_log_probs, advantages):
 
     if config['kl_max'] is None or kl_div < config['kl_max']:
         # If KL divergence is too big we don't take gradient steps
-        do_gradient_step(agent.actor, agent.actor_opt, objective,
-                         grad_norm=config['grad_norm'], retain_graph=True)
+        do_accumulated_gradient_step(agent.actor, agent.actor_opt, objective,
+                                     config, batch_idx, num_batches,
+                                     retain_graph=True)
+        # do_gradient_step(agent.actor, agent.actor_opt, objective,
+        #                 grad_norm=config['grad_norm'], retain_graph=True)
 
     if agent.use_wandb:
         log_ppo(agent, entropy_loss, kl_div, config['kl_max'])
