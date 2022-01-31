@@ -23,12 +23,11 @@ if __name__ == '__main__':
               'discount_factor': 0.99,
               'height': 84,
               'width': 84,
-              'contrast_lr': 1e-3,  # 3e-3 alt
+              'contrast_lr': 1e-3,
               'temperature': 0.1,
-              'contrast_head_dim': 5,  # Unused value
               'frames_to_skip': 4,
               'stacked_frames': 4,
-              'prefix': 'Loadv0'
+              'prefix': 'Loaded_Run_'
               }
 
     FRAMES_TO_STACK = 4
@@ -37,11 +36,10 @@ if __name__ == '__main__':
     NUM_TIMESTEPS = 4_000_000
     act_dim = 18
 
-    # TODO test model save / load
     # TODO image normalization
 
     environment.seed_everything(SEED)
     env = environment.create_env(config)
-    agent = Agent(env, action_dim=act_dim, config=config, load=False)
+    agent = Agent(env, action_dim=act_dim, config=config, load=True)
 
     run_timesteps(agent, NUM_TIMESTEPS, is_pretrain=True)
