@@ -25,7 +25,6 @@ class ContrastiveLearner(nn.Module):
             nn.Conv2d(64, 64, 3),
             n_power_iterations=power_iters,
         )
-        # TODO 3136 is output dim after conv, but should it be 1024?
         self.backbone = nn.Sequential(
             self.conv1,
             nn.ELU(inplace=True),
@@ -41,10 +40,8 @@ class ContrastiveLearner(nn.Module):
 
         self.head = nn.Sequential(
             nn.Linear(15, hidden_dim),
-            nn.ELU(inplace=True),  # TODO check DrQ for their activation here
+            nn.ELU(inplace=True),
             nn.Linear(hidden_dim, head_dim)
-            # TODO replace head dim with 5 if contrast not working
-            # and hidden dim wiht 1024
         )
         self.device = T.device('cuda' if T.cuda.is_available() else 'cpu')
         self.to(self.device)

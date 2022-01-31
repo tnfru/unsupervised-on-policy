@@ -1,8 +1,8 @@
 import torch as T
 import torch.optim as optim
 import os
+import wandb
 
-from torch.utils.data import DataLoader
 from torch.distributions.categorical import Categorical
 
 from ppg.networks import PPG, CriticNet
@@ -15,10 +15,11 @@ from pretrain.reward import ParticleReward
 from pretrain.data_augmentation import DataAugment
 from pretrain.contrastive_learning import ContrastiveLearner, ContrastiveLoss
 from pretrain.state_data import StateData
+from utils.network_utils import get_loader
 
 
 class Agent(T.nn.Module):
-    def __init__(self, env, action_dim, config):
+    def __init__(self, env, action_dim, config, load=False):
         super().__init__()
         self.env = env
         self.metrics = {}
@@ -48,6 +49,7 @@ class Agent(T.nn.Module):
         self.use_wandb = config['use_wandb']
         self.AUX_WARN_THRESHOLD = 100
         self.steps = 0
+        self.path = './saved_models'
 
         self.device = T.device(
             'cuda' if T.cuda.is_available() else 'cpu')
@@ -56,6 +58,9 @@ class Agent(T.nn.Module):
         if self.use_wandb:
             prefix = config['prefix']
             init_logging(config, self, prefix)
+
+        if load:
+            self.load_model()
 
     @T.no_grad()
     def get_action(self, state):
@@ -126,13 +131,15 @@ class Agent(T.nn.Module):
         if self.use_wandb:
             log_contrast_loss_epoch(self, total_contrast_loss)
 
-    def save(self):
-        PATH = './saved_models'
-        os.makedirs(PATH, exist_ok=True)
-        PATH += f'/agent_latest.pt'
+    def save_model(self):
+        os.makedirs(self.path, exist_ok=True)
+        PATH = self.path + '/agent_latest.pt'
         T.save(self.state_dict(), PATH)
 
+    def load_model(self):
+        PATH = self.path + '/agent_latest.pt'
+        self.load_state_dict(T.load(PATH))
 
-def get_loader(dset, config, drop_last=False):
-    return DataLoader(dset, batch_size=config['batch_size'],
-                      shuffle=True, pin_memory=True, drop_last=drop_last)
+    def log_metrics(self):
+        wandb.log(self.metrics)
+        self.metrics = {}

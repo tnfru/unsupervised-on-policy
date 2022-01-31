@@ -1,5 +1,4 @@
 import torch as T
-import wandb
 from einops import rearrange
 
 from pretrain.reward import calc_pretrain_rewards
@@ -12,7 +11,6 @@ from utils.logger import log_running_estimates
 def run_episode(agent, trajectory, pretrain):
     state = agent.env.reset()
     done = False
-
     lives = agent.env.unwrapped.ale.lives()
 
     while not (lives == 0 and done):
@@ -63,8 +61,9 @@ def run_timesteps(agent, num_timesteps, is_pretrain):
 
             agent.trajectory.data_to_tensors()
             agent.learn(is_pretrain=is_pretrain)
+
             if agent.use_wandb:
-                wandb.log(agent.metrics)
-                agent.metrics = {}
+                agent.log_metrics()
+
             agent.forget()
-            agent.save()
+            agent.save_model()

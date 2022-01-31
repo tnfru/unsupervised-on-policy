@@ -1,4 +1,5 @@
 import torch as T
+from torch.utils.data import DataLoader
 
 
 def do_gradient_step(network, optimizer, objective, grad_norm,
@@ -44,3 +45,8 @@ def approx_kl_div(log_probs, old_log_probs, ratio=None, is_aux=False):
             kl_div = ratio - 1 - log_ratio
 
         return kl_div.mean()
+
+
+def get_loader(dset, config, drop_last=False):
+    return DataLoader(dset, batch_size=config['batch_size'],
+                      shuffle=True, pin_memory=True, drop_last=drop_last)
