@@ -2,13 +2,17 @@ import torch as T
 from torch.utils.data import DataLoader
 
 
-class ParticleReward:
+class ParticleReward(T.nn.Module):
     def __init__(self, top_k=5):
-        self.mean = 0.0
-        self.var = 1.0
-        self.samples_done = 0
-        self.c = 1
-        self.top_k = top_k
+        super().__init__()
+        self.mean = T.tensor(0.0)
+        self.var = T.tensor(1.0)
+        self.samples_done = T.tensor(0)
+        self.c = T.tensor(1)
+        self.top_k = T.tensor(top_k)
+
+    def forward(self, states, normalize=True):
+        return self.calculate_reward(states, normalize)
 
     @T.no_grad()
     def calculate_reward(self, states, normalize=True):

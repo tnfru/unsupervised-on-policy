@@ -13,30 +13,30 @@ def init_logging(config, agent, prefix):
     wandb.run.name = prefix + '_' + wandb.run.name
 
 
-def log_ppo(entropy_loss, kl_div, kl_max):
+def log_ppo(agent, entropy_loss, kl_div, kl_max):
     if kl_max is None or kl_max < kl_div:
         exceeded = 0
     else:
         exceeded = 1
-    wandb.log({'entropy loss': entropy_loss,
-               'kl div': kl_div.mean(),
-               'kl_exceeded': exceeded})
+    agent.metrics.update({'entropy loss': entropy_loss,
+                          'kl div': kl_div.mean(),
+                          'kl_exceeded': exceeded})
 
 
-def log_aux(aux_values, aux_loss, kl_div, kl_max):
+def log_aux(agent, aux_values, aux_loss, kl_div, kl_max):
     if kl_max is None or kl_max < kl_div:
-        wandb.log({'aux state value': aux_values.mean(),
-                   'aux loss': aux_loss.mean(),
-                   'aux kl_div': kl_div,
-                   'kl_exceeded': 0})
+        agent.metrics.update({'aux state value': aux_values.mean(),
+                              'aux loss': aux_loss.mean(),
+                              'aux kl_div': kl_div,
+                              'kl_exceeded': 0})
     else:
-        wandb.log({'aux kl_div': kl_div,
-                   'kl_exceeded': 1})
+        agent.metrics.update({'aux kl_div': kl_div,
+                              'kl_exceeded': 1})
 
 
-def log_critic(critic_loss, state_values):
-    wandb.log({'critic loss': critic_loss.mean(),
-               'critic state value': state_values.mean()})
+def log_critic(agent, critic_loss, state_values):
+    agent.metrics.update({'critic loss': critic_loss.mean(),
+                          'critic state value': state_values.mean()})
 
 
 def warn_about_aux_loss_scaling(aux_loss):
@@ -45,26 +45,30 @@ def warn_about_aux_loss_scaling(aux_loss):
                   f'learning')
 
 
-def log_episode_length(trajectory):
-    wandb.log({
+def log_episode_length(agent, trajectory):
+    agent.metrics.update({
         'episode_length': len(trajectory)
     })
 
 
-def log_contrast_loss(loss):
-    wandb.log({'contrastive loss': loss})
+def log_contrast_loss_batch(agent, loss):
+    agent.metrics.update({'contrastive loss batch': loss})
+
+
+def log_contrast_loss_epoch(agent, loss):
+    agent.metrics.update({'contrast loss epoch': loss})
 
 
 def log_rewards(rewards):
     wandb.log({'reward': np.sum(rewards)})
 
 
-def log_steps_done(steps):
-    wandb.log({'million env steps': steps / 1e6})
+def log_steps_done(agent, steps):
+    agent.metrics.update({'million env steps': steps / 1e6})
 
 
-def log_particle_reward(rewards, mean):
-    wandb.log({
+def log_particle_reward(agent, rewards, mean):
+    agent.metrics.update({
         'particle reward sum': T.sum(rewards),
         'particle reward mean': T.mean(rewards),
         'particle reward unnormalized': mean * T.mean(rewards),
@@ -72,8 +76,8 @@ def log_particle_reward(rewards, mean):
     })
 
 
-def log_running_estimates(mean, var):
-    wandb.log({
+def log_running_estimates(agent, mean, var):
+    agent.metrics.update({
         'running mean': mean,
         'running var': var
     })

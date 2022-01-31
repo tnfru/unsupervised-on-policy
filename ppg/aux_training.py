@@ -43,4 +43,4 @@ def train_aux_batch(agent, states, expected_returns, old_log_probs,
                          grad_norm=config['grad_norm'])
 
     if agent.use_wandb:
-        log_aux(aux_values, aux_loss, kl_div, config['kl_max'])
+        log_aux(agent, aux_values, aux_loss, kl_div, config['kl_max'])

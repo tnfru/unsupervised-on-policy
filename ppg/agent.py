@@ -1,12 +1,13 @@
 import torch as T
 import torch.optim as optim
+import os
 import wandb
 
-from torch.utils.data import DataLoader
 from torch.distributions.categorical import Categorical
 
 from ppg.networks import PPG, CriticNet
-from utils.logger import init_logging, log_contrast_loss
+from utils.logger import init_logging, log_contrast_loss_batch, \
+    log_contrast_loss_epoch
 from ppg.trajectory import Trajectory
 from ppg.aux_training import train_aux_epoch
 from ppg.ppo_training import train_ppo_epoch
@@ -14,12 +15,14 @@ from pretrain.reward import ParticleReward
 from pretrain.data_augmentation import DataAugment
 from pretrain.contrastive_learning import ContrastiveLearner, ContrastiveLoss
 from pretrain.state_data import StateData
+from utils.network_utils import get_loader
 
 
 class Agent(T.nn.Module):
-    def __init__(self, env, action_dim, config):
+    def __init__(self, env, action_dim, config, load=False):
         super().__init__()
         self.env = env
+        self.metrics = {}
 
         self.actor = PPG(action_dim, config['stacked_frames'])
         self.actor_opt = optim.Adam(
@@ -46,6 +49,7 @@ class Agent(T.nn.Module):
         self.use_wandb = config['use_wandb']
         self.AUX_WARN_THRESHOLD = 100
         self.steps = 0
+        self.path = './saved_models'
 
         self.device = T.device(
             'cuda' if T.cuda.is_available() else 'cpu')
@@ -54,6 +58,9 @@ class Agent(T.nn.Module):
         if self.use_wandb:
             prefix = config['prefix']
             init_logging(config, self, prefix)
+
+        if load:
+            self.load_model()
 
     @T.no_grad()
     def get_action(self, state):
@@ -116,14 +123,23 @@ class Agent(T.nn.Module):
             self.contrast_opt.step()
 
             if self.use_wandb:
-                log_contrast_loss(loss.item())
+                log_contrast_loss_batch(self, loss.item())
             total_contrast_loss += loss.item()
+
         total_contrast_loss /= len(loader)
 
         if self.use_wandb:
-            wandb.log({'total contrast loss': total_contrast_loss})
+            log_contrast_loss_epoch(self, total_contrast_loss)
 
+    def save_model(self):
+        os.makedirs(self.path, exist_ok=True)
+        PATH = self.path + '/agent_latest.pt'
+        T.save(self.state_dict(), PATH)
 
-def get_loader(dset, config, drop_last=False):
-    return DataLoader(dset, batch_size=config['batch_size'],
-                      shuffle=True, pin_memory=True, drop_last=drop_last)
+    def load_model(self):
+        PATH = self.path + '/agent_latest.pt'
+        self.load_state_dict(T.load(PATH))
+
+    def log_metrics(self):
+        wandb.log(self.metrics)
+        self.metrics = {}

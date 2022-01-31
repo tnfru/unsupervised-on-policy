@@ -1,28 +1,16 @@
 import torch as T
 from einops import rearrange
 
-from ppg.gae import calculate_advantages
 from pretrain.reward import calc_pretrain_rewards
 from pretrain.state_data import StateData
-from utils.network_utils import normalize
 from utils.logger import log_episode_length, log_particle_reward, \
     log_rewards, log_steps_done
 from utils.logger import log_running_estimates
 
 
 def run_episode(agent, trajectory, pretrain):
-    states = []
-    actions = []
-    rewards = []
-    dones = []
-    log_probs = []
-    state_vals = []
-    aux_vals = []
-    log_dists = []
-
     state = agent.env.reset()
     done = False
-
     lives = agent.env.unwrapped.ale.lives()
 
     while not (lives == 0 and done):
@@ -33,55 +21,27 @@ def run_episode(agent, trajectory, pretrain):
         state = state.cpu()
         next_state, reward, done, _ = agent.env.step(action)
 
-        states.append(state)
-        state_vals.append(state_val)
-        actions.append(action)
-        rewards.append(reward)
-        dones.append(done)
-        log_probs.append(log_prob)
-        aux_vals.append(aux_val)
-        log_dists.append(log_dist)
+        trajectory.append_step(state, state_val, action, reward, done,
+                               log_prob, aux_val, log_dist)
 
         state = next_state
         lives = agent.env.unwrapped.ale.lives()
 
     if agent.use_wandb:
-        log_rewards(rewards)
+        log_rewards(trajectory.rewards)
 
     if pretrain:
-        state_dset = StateData(states)
+        state_dset = StateData(trajectory.states)
         state_dset.fix_datatypes()
         rewards = calc_pretrain_rewards(agent, state_dset)
 
         if agent.use_wandb:
-            log_particle_reward(rewards, agent.reward_function.mean)
-            log_running_estimates(agent.reward_function.mean,
+            log_particle_reward(agent, rewards, agent.reward_function.mean)
+            log_running_estimates(agent, agent.reward_function.mean,
                                   agent.reward_function.var)
 
-    advantages = calculate_advantages(rewards,
-                                      state_vals,
-                                      dones,
-                                      agent.config['discount_factor'],
-                                      agent.config['gae_lambda'])
-    expected_returns = T.tensor(state_vals, dtype=T.float) + advantages
-    aux_advantages = calculate_advantages(rewards,
-                                          aux_vals,
-                                          dones,
-                                          agent.config['discount_factor'],
-                                          agent.config['gae_lambda'])
-    aux_rets = T.tensor(aux_vals, dtype=T.float) + aux_advantages
-    advantages = normalize(advantages)
+    trajectory.calc_advantages(agent.config)
 
-    trajectory.append_timesteps(states=states,
-                                actions=actions,
-                                expected_returns=expected_returns,
-                                dones=dones,
-                                log_probs=log_probs,
-                                advantages=advantages,
-                                aux_vals=aux_vals,
-                                log_dists=log_dists,
-                                state_vals=state_vals,
-                                aux_rets=aux_rets)
     return trajectory
 
 
@@ -96,9 +56,14 @@ def run_timesteps(agent, num_timesteps, is_pretrain):
             steps_done += len(agent.trajectory)
 
             if agent.use_wandb:
-                log_episode_length(agent.trajectory)
-                log_steps_done(steps_done)
+                log_episode_length(agent, agent.trajectory)
+                log_steps_done(agent, steps_done)
 
-            agent.trajectory.fix_datatypes()
+            agent.trajectory.data_to_tensors()
             agent.learn(is_pretrain=is_pretrain)
+
+            if agent.use_wandb:
+                agent.log_metrics()
+
             agent.forget()
+            agent.save_model()

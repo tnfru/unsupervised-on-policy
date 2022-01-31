@@ -40,7 +40,7 @@ def train_ppo_batch(agent, states, actions, old_log_probs, advantages):
                          grad_norm=config['grad_norm'], retain_graph=True)
 
     if agent.use_wandb:
-        log_ppo(entropy_loss, kl_div, config['kl_max'])
+        log_ppo(agent, entropy_loss, kl_div, config['kl_max'])
 
 
 # Both objectives flip the sign to turn their objective into a loss

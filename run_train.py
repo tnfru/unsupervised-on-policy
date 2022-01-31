@@ -23,31 +23,25 @@ if __name__ == '__main__':
               'discount_factor': 0.99,
               'height': 84,
               'width': 84,
-              'contrast_lr': 1e-3,  # 3e-3 alt
+              'contrast_lr': 1e-3,
               'temperature': 0.1,
-              'contrast_head_dim': 5,  # Unused value
               'frames_to_skip': 4,
               'stacked_frames': 4,
-              'prefix': 'v1'
+              'prefix': 'Loaded_Run_'
               }
 
     FRAMES_TO_STACK = 4
     FRAMES_TO_SKIP = 4
     SEED = 1337
-    NUM_TIMESTEPS = 250_000_000
+    NUM_TIMESTEPS = 4_000_000
     act_dim = 18
 
-    # TODO save model
-    # TODO vectorized envs
-    # TODO add data paralellism
-
     # TODO image normalization
-    # TODO test original paper architecture instead of gloabl avg pool
-
-    # TODO compare Adam with LARS optimizer vs AdamW
+    # TODO batch size
+    # TODO actor lr
 
     environment.seed_everything(SEED)
     env = environment.create_env(config)
-    agent = Agent(env, action_dim=act_dim, config=config)
+    agent = Agent(env, action_dim=act_dim, config=config, load=True)
 
     run_timesteps(agent, NUM_TIMESTEPS, is_pretrain=True)
