@@ -37,6 +37,8 @@ if __name__ == '__main__':
     act_dim = 18
 
     # TODO image normalization
+    # TODO batch size
+    # TODO actor lr
 
     environment.seed_everything(SEED)
     env = environment.create_env(config)
