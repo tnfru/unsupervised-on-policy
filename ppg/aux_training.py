@@ -1,7 +1,7 @@
 from torch.distributions.categorical import Categorical
 
 from ppg.losses import value_loss_fun
-from ppg.critic_training import train_critic_batch
+from ppg.critic_training import train_critic_batch, train_critic_epoch
 from utils.network_utils import data_to_device, approx_kl_div, do_gradient_step
 from utils.network_utils import do_accumulated_gradient_step
 from utils.logger import warn_about_aux_loss_scaling, log_aux
@@ -18,8 +18,8 @@ def train_aux_epoch(agent, loader):
 
         train_aux_batch(agent, states, aux_returns, log_dists, aux_values,
                         batch_idx, num_batches)
-        train_critic_batch(agent, states, expected_returns, state_values,
-                           batch_idx, num_batches)
+        # train_critic_batch(agent, states, expected_returns, state_values,
+        #                   batch_idx, num_batches)
 
 
 def train_aux_batch(agent, states, expected_returns, old_log_probs,
