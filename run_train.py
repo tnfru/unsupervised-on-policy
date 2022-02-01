@@ -28,7 +28,7 @@ if __name__ == '__main__':
               'temperature': 0.1,
               'frames_to_skip': 4,
               'stacked_frames': 4,
-              'prefix': 'Loaded_Run_'
+              'prefix': 'Normalized'
               }
 
     FRAMES_TO_STACK = 4
@@ -37,12 +37,10 @@ if __name__ == '__main__':
     NUM_TIMESTEPS = 4_000_000
     act_dim = 18
 
-    # TODO image normalization
-    # TODO batch size
-    # TODO grad acc if uneven
+    # TODO test image normalization
 
     environment.seed_everything(SEED)
     env = environment.create_env(config)
-    agent = Agent(env, action_dim=act_dim, config=config, load=True)
+    agent = Agent(env, action_dim=act_dim, config=config, load=False)
 
     run_timesteps(agent, NUM_TIMESTEPS, is_pretrain=True)
