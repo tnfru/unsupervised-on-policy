@@ -17,7 +17,7 @@ def do_accumulated_gradient_step(network, optimizer, objective, config,
     batches_until_step = batch_idx % batches_to_acc
     is_last_batch = batch_idx == num_batches - 1
 
-    if batches_to_acc == 1 or batches_until_step == 0 or is_last_batch:
+    if batches_until_step == 0 or is_last_batch:
         do_gradient_step(network, optimizer, objective, grad_norm=config[
             'grad_norm'], retain_graph=retain_graph)
 

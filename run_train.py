@@ -7,7 +7,7 @@ if __name__ == '__main__':
               'kl_max': None,  # 0.05 used previously
               'beta': 1,
               'val_coeff': 1e-2,
-              'rollout_length': 256,
+              'rollout_length': 512,
               'train_iterations': 1,
               'entropy_coeff': 0.01,
               'grad_norm': 10,  # 0.5 alternatively
