@@ -7,7 +7,7 @@ if __name__ == '__main__':
               'kl_max': None,  # 0.05 used previously
               'beta': 1,
               'val_coeff': 1e-2,
-              'rollout_length': 256,
+              'rollout_length': 512,
               'train_iterations': 1,
               'entropy_coeff': 0.01,
               'grad_norm': 10,  # 0.5 alternatively
@@ -28,7 +28,7 @@ if __name__ == '__main__':
               'temperature': 0.1,
               'frames_to_skip': 4,
               'stacked_frames': 4,
-              'prefix': 'Loaded_Run_'
+              'prefix': 'Loaded_Run'
               }
 
     FRAMES_TO_STACK = 4
@@ -36,10 +36,6 @@ if __name__ == '__main__':
     SEED = 1337
     NUM_TIMESTEPS = 4_000_000
     act_dim = 18
-
-    # TODO image normalization
-    # TODO batch size
-    # TODO grad acc if uneven
 
     environment.seed_everything(SEED)
     env = environment.create_env(config)

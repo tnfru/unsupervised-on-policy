@@ -18,8 +18,8 @@ def train_ppo_epoch(agent, loader):
 
         train_ppo_batch(agent, states, actions, log_probs, advantages,
                         batch_idx, num_batches)
-        train_critic_batch(agent, states, expected_returns, state_values,
-                           batch_idx, num_batches)
+        # train_critic_batch(agent, states, expected_returns, state_values,
+        #                   batch_idx, num_batches)
 
 
 def train_ppo_batch(agent, states, actions, old_log_probs, advantages,

@@ -17,6 +17,7 @@ from pretrain.contrastive_learning import ContrastiveLearner, ContrastiveLoss
 from pretrain.state_data import StateData
 from utils.network_utils import get_loader, do_gradient_step, \
     do_accumulated_gradient_step
+from ppg.critic_training import train_critic_epoch
 
 
 class Agent(T.nn.Module):
@@ -93,6 +94,7 @@ class Agent(T.nn.Module):
 
         for epoch in range(self.config['train_iterations']):
             train_ppo_epoch(agent=self, loader=loader)
+            train_critic_epoch(agent=self, loader=loader)
             self.entropy_coeff *= self.config['entropy_decay']
 
     def aux_training_phase(self):
@@ -102,6 +104,7 @@ class Agent(T.nn.Module):
 
         for aux_epoch in range(self.config['aux_iterations']):
             train_aux_epoch(agent=self, loader=loader)
+            train_critic_epoch(agent=self, loader=loader, is_aux=True)
         self.trajectory.is_aux_epoch = False
 
     def forget(self):
