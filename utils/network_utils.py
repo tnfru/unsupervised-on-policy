@@ -13,13 +13,18 @@ def do_gradient_step(network, optimizer, objective, grad_norm,
 
 def do_accumulated_gradient_step(network, optimizer, objective, config,
                                  batch_idx, num_batches, retain_graph=False):
+    objective.backward(retain_graph=retain_graph)
+
     batches_to_acc = int(config['target_batch_size'] / config['batch_size'])
-    batches_until_step = batch_idx % batches_to_acc
+    batches_until_step = (batch_idx + 1) % batches_to_acc
     is_last_batch = batch_idx == num_batches - 1
 
     if batches_until_step == 0 or is_last_batch:
-        do_gradient_step(network, optimizer, objective, grad_norm=config[
-            'grad_norm'], retain_graph=retain_graph)
+        if config['grad_norm'] is not None:
+            T.nn.utils.clip_grad_norm_(network.parameters(), config[
+                'grad_norm'])
+        optimizer.step()
+        optimizer.zero_grad()
 
 
 def data_to_device(rollout_data, device):

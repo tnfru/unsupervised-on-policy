@@ -31,8 +31,6 @@ if __name__ == '__main__':
               'prefix': 'Loaded_Run'
               }
 
-    FRAMES_TO_STACK = 4
-    FRAMES_TO_SKIP = 4
     SEED = 1337
     NUM_TIMESTEPS = 4_000_000
     act_dim = 18
