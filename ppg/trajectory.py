@@ -75,10 +75,8 @@ class Trajectory(T.utils.data.Dataset):
         # done = self.dones[index] not required by any loop
 
         if self.is_aux_epoch:
-            aux_val = self.aux_state_values[index]
             aux_ret = self.aux_rets[index]
-            return state, expected_return, aux_ret, state_val, aux_val, \
-                   log_dist
+            return state, expected_return, aux_ret, state_val, log_dist
         else:
             action = self.actions[index]
             log_prob = self.log_probs[index]

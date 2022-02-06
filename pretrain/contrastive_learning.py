@@ -6,7 +6,16 @@ from einops.layers.torch import Rearrange
 
 
 class ContrastiveLearner(nn.Module):
-    def __init__(self, config, hidden_dim=128, head_dim=64, power_iters=5):
+    def __init__(self, config: dict, hidden_dim=128, head_dim=64,
+                 power_iters=5):
+        """
+        Encoder and projection head for representation Learning
+        Args:
+            config: configuration file
+            hidden_dim: projection head hidden dim
+            head_dim: projection head output dum
+            power_iters: spectral normalization hyperparameter
+        """
         super().__init__()
         self.device = T.device('cuda' if T.cuda.is_available() else 'cpu')
         self.to(self.device)
@@ -57,7 +66,13 @@ class ContrastiveLearner(nn.Module):
 
 
 class ContrastiveLoss(nn.Module):
-    def __init__(self, config, num_views=2):
+    def __init__(self, config: dict, num_views=2):
+        """
+        NT-Xent loss
+        Args:
+            config: configuration file
+            num_views: number of data augmentations
+        """
         super().__init__()
         self.temp = config['temperature']
         self.num_views = num_views
@@ -95,4 +110,5 @@ class ContrastiveLoss(nn.Module):
 
 
 def drop_self_pairs(x, pair_idx, dim):
+    """ Helper function to drop dot products with self"""
     return x[pair_idx].view(dim, -1)

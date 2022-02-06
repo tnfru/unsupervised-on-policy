@@ -5,7 +5,13 @@ import numpy as np
 
 
 class DataAugment(nn.Module):
-    def __init__(self, config, pad_size=4, brightness_clip=0.2):
+    def __init__(self, config: dict, pad_size=4, brightness_clip=0.2):
+        """
+        Args:
+            config: configuration file
+            pad_size: how far to continue last pixel as padding
+            brightness_clip: maximum brightness change
+        """
         super().__init__()
 
         self.rng = np.random.default_rng()
