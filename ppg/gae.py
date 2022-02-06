@@ -15,7 +15,7 @@ def calculate_advantages(rewards: list, state_vals: list, dones: list,
         discount_factor: scaling factor for value of next state
         gae_lambda: hyperparameter for GAE scaling
 
-    Returns:
+    Returns: advantages over the given timesteps
 
     """
     advantages = []
