@@ -51,8 +51,7 @@ def run_episode(agent: T.nn.Module, trajectory: Trajectory, pretrain: bool):
         trajectory.append_rewards(rewards)
 
         if agent.use_wandb:
-            log_particle_reward(agent, trajectory.rewards,
-                                agent.reward_function.mean)
+            log_particle_reward(agent, rewards, agent.reward_function.mean)
             log_running_estimates(agent, agent.reward_function.mean,
                                   agent.reward_function.var)
 
