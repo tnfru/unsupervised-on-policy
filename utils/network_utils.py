@@ -78,15 +78,15 @@ def approx_kl_div(log_probs: T.tensor, old_log_probs: T.tensor,
 
     if is_aux:
         loss = T.nn.KLDivLoss(log_target=False, reduction='batchmean')
-        print('new', log_probs.exp().sum())
-        print('old', old_log_probs.exp().sum())
+        print('new', log_probs[0].exp().sum())
+        print('old', old_log_probs[0].exp().sum())
         return loss(log_probs, old_log_probs.exp())
 
     else:
         with T.no_grad():
             loss = T.nn.KLDivLoss(log_target=False, reduction='batchmean')
-            print('new', log_probs.exp().sum())
-            print('old', old_log_probs.exp().sum())
+            print('new', log_probs[0].exp().sum())
+            print('old', old_log_probs[0].exp().sum())
             return loss(log_probs, old_log_probs.exp())
 
 
