@@ -45,10 +45,11 @@ def run_episode(agent: T.nn.Module, trajectory: Trajectory, pretrain: bool):
     if pretrain:
         state_dset = StateData(trajectory.states)
         state_dset.fix_datatypes()
-        rewards = calc_pretrain_rewards(agent, state_dset)
+        trajectory.rewards = calc_pretrain_rewards(agent, state_dset)
 
         if agent.use_wandb:
-            log_particle_reward(agent, rewards, agent.reward_function.mean)
+            log_particle_reward(agent, trajectory.rewards,
+                                agent.reward_function.mean)
             log_running_estimates(agent, agent.reward_function.mean,
                                   agent.reward_function.var)
 
