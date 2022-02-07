@@ -28,7 +28,7 @@ if __name__ == '__main__':
               'temperature': 0.1,
               'frames_to_skip': 4,
               'stacked_frames': 4,
-              'prefix': 'FIXED_RUN'
+              'prefix': 'PRETRAIN_RUN'
               }
 
     SEED = 1337
