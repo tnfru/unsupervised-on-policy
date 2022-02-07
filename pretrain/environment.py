@@ -6,7 +6,17 @@ from supersuit import frame_stack_v1, resize_v0, clip_reward_v0
 from stable_baselines3.common.atari_wrappers import EpisodicLifeEnv
 
 
-def create_env(config, name='MsPacman', render=None):
+def create_env(config: dict, name='MsPacman', render=None):
+    """
+    Creates the given gym environment
+    Args:
+        config: configuration for the env
+        name: name of the atari game
+        render: the way the game is rendered
+
+    Returns: The created environment
+
+    """
     env = gym.make('ALE/' + name + '-v5',
                    obs_type='grayscale',  # ram | rgb | grayscale
                    frameskip=config['frames_to_skip'],  # frame skip
@@ -26,7 +36,13 @@ def create_env(config, name='MsPacman', render=None):
     return env
 
 
-def seed_everything(seed, deterministic=False):
+def seed_everything(seed: int, deterministic=False):
+    """
+    Puts all seeds for reproducibility
+    Args:
+        seed: the selected seed
+        deterministic: if run on deterministic mode
+    """
     T.manual_seed(seed)
 
     if deterministic:

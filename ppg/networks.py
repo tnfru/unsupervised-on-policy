@@ -48,6 +48,12 @@ class CriticNet(nn.Module):
 
 class PPG(nn.Module):
     def __init__(self, action_dim, state_dim):
+        """
+        Phasic Policy Gradient Network
+        Args:
+            action_dim: number of available actions
+            state_dim: number of channels of state / observation
+        """
         super().__init__()
         self.conv1 = nn.Sequential(
             nn.Conv2d(state_dim, 64, 3, bias=False),
@@ -95,4 +101,12 @@ class PPG(nn.Module):
 
 
 def global_avg_pool(values):
+    """
+    Performs the global average pooling operation
+    Args:
+        values: values to average
+
+    Returns: chanel wise mean
+
+    """
     return reduce(values, 'bs c h w -> bs c', 'mean')

@@ -1,6 +1,8 @@
 import torch as T
 from torch.utils.data import DataLoader
 
+from pretrain.state_data import StateData
+
 
 class ParticleReward(T.nn.Module):
     def __init__(self, top_k=5):
@@ -15,11 +17,20 @@ class ParticleReward(T.nn.Module):
         return self.calculate_reward(states, normalize)
 
     @T.no_grad()
-    def calculate_reward(self, states, normalize=True):
-        # to calculate apt reward, we approximate a hypersphere around each
-        # particle (single column entry in latent space). the reward is
-        # roughly equal to the volume of the hypersphere in comparison to its
-        # kNN
+    def calculate_reward(self, states: T.tensor, normalize=True):
+        """
+        to calculate apt reward, we approximate a hypersphere around each
+        particle (single column entry in latent space). the reward is
+        roughly equal to the volume of the hypersphere in comparison to its
+        kNN
+
+        Args:
+            states: states to calculate reward for
+            normalize: if rewards should be normalized
+
+        Returns: particle rewards, T.tensor
+
+        """
 
         particle_volumes = T.norm(states.unsqueeze(1) - states.unsqueeze(0),
                                   dim=-1)
@@ -42,6 +53,7 @@ class ParticleReward(T.nn.Module):
         return particle_rewards
 
     def update_estimates(self, x):
+        """ Updates running estimates of mean and var"""
         batch_size = x.size(0)
         difference = x.mean(dim=0) - self.mean
         total_samples_done = self.samples_done + batch_size
@@ -70,7 +82,16 @@ class ParticleReward(T.nn.Module):
 
 
 @T.no_grad()
-def calc_pretrain_rewards(agent, state_set):
+def calc_pretrain_rewards(agent: T.nn.Module, state_set: StateData):
+    """
+
+    Args:
+        agent: agent whose reward function will be used
+        state_set: dataset of states to calculate rewards for
+
+    Returns: rewards for all given states
+
+    """
     loader = DataLoader(state_set, batch_size=agent.config[
         'batch_size'], shuffle=False, pin_memory=True, drop_last=False)
 

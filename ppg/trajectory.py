@@ -22,7 +22,7 @@ class Trajectory(T.utils.data.Dataset):
     def __len__(self):
         return len(self.states)
 
-    def append_step(self, state, state_val, action, reward, done,
+    def append_step(self, state, state_val, action, done,
                     log_prob, aux_val, log_dist):
         self.states.append(state)
         self.actions.append(action)
@@ -31,7 +31,10 @@ class Trajectory(T.utils.data.Dataset):
         self.aux_state_values.append(aux_val)
         self.state_vals.append(state_val)
         self.log_dists.append(log_dist)
-        self.rewards.append(reward)
+        # self.rewards.append(reward)
+
+    def append_rewards(self, rewards):
+        self.rewards.extend(rewards)
 
     def data_to_tensors(self):
         self.states = T.cat(self.states)
@@ -69,16 +72,14 @@ class Trajectory(T.utils.data.Dataset):
     def __getitem__(self, index):
         state = self.states[index]
         expected_return = self.expected_returns[index]
-        log_dist = self.log_dists[index]
+        log_dist = self.log_dists[index].squeeze()
         state_val = self.state_vals[index]
         advantage = self.advantages[index]
         # done = self.dones[index] not required by any loop
 
         if self.is_aux_epoch:
-            aux_val = self.aux_state_values[index]
             aux_ret = self.aux_rets[index]
-            return state, expected_return, aux_ret, state_val, aux_val, \
-                   log_dist
+            return state, expected_return, aux_ret, state_val, log_dist
         else:
             action = self.actions[index]
             log_prob = self.log_probs[index]

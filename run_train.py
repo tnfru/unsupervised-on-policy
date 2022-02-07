@@ -7,7 +7,7 @@ if __name__ == '__main__':
               'kl_max': None,  # 0.05 used previously
               'beta': 1,
               'val_coeff': 1e-2,
-              'rollout_length': 256,
+              'rollout_length': 512,
               'train_iterations': 1,
               'entropy_coeff': 0.01,
               'grad_norm': 10,  # 0.5 alternatively
@@ -17,6 +17,7 @@ if __name__ == '__main__':
               'aux_iterations': 3,
               'gae_lambda': 0.95,
               'batch_size': 256,  # 512 while pretraining, 32 after
+              'target_batch_size': 512,
               'value_clip': None,  # 0.4 alternatively
               'entropy_decay': 0.999,
               'use_wandb': True,
@@ -27,21 +28,16 @@ if __name__ == '__main__':
               'temperature': 0.1,
               'frames_to_skip': 4,
               'stacked_frames': 4,
-              'prefix': 'Loaded_Run_'
+              'prefix': 'FIXED_RUN'
               }
 
-    FRAMES_TO_STACK = 4
-    FRAMES_TO_SKIP = 4
     SEED = 1337
     NUM_TIMESTEPS = 4_000_000
     act_dim = 18
 
-    # TODO image normalization
-    # TODO batch size
-    # TODO actor lr
-
     environment.seed_everything(SEED)
     env = environment.create_env(config)
-    agent = Agent(env, action_dim=act_dim, config=config, load=True)
+    agent = Agent(env, action_dim=act_dim, config=config, load=False,
+                  load_new_config=False)
 
     run_timesteps(agent, NUM_TIMESTEPS, is_pretrain=True)
