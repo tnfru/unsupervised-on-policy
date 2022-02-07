@@ -42,7 +42,7 @@ def run_episode(agent: T.nn.Module, trajectory: Trajectory, pretrain: bool):
         lives = agent.env.unwrapped.ale.lives()
 
     if agent.use_wandb:
-        log_rewards(trajectory.rewards)
+        log_rewards(rewards)
 
     if pretrain:
         state_dset = StateData(trajectory.states)
