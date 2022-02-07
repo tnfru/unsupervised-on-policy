@@ -69,10 +69,10 @@ def log_steps_done(agent, steps):
 
 def log_particle_reward(agent, rewards, mean):
     agent.metrics.update({
-        'particle reward sum': T.sum(rewards),
-        'particle reward mean': T.mean(rewards),
-        'particle reward unnormalized': mean * T.mean(rewards),
-        'particle reward sum unnormalized': mean * T.sum(rewards)
+        'particle reward sum': np.sum(rewards),
+        'particle reward mean': np.mean(rewards),
+        'particle reward unnormalized': mean * np.mean(rewards),
+        'particle reward sum unnormalized': mean * np.sum(rewards)
     })
 
 

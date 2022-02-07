@@ -28,7 +28,7 @@ if __name__ == '__main__':
               'temperature': 0.1,
               'frames_to_skip': 4,
               'stacked_frames': 4,
-              'prefix': 'Loaded_Run'
+              'prefix': 'FIXED_RUN'
               }
 
     SEED = 1337
@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
     environment.seed_everything(SEED)
     env = environment.create_env(config)
-    agent = Agent(env, action_dim=act_dim, config=config, load=True,
-                  load_new_config=True)
+    agent = Agent(env, action_dim=act_dim, config=config, load=False,
+                  load_new_config=False)
 
     run_timesteps(agent, NUM_TIMESTEPS, is_pretrain=True)

@@ -2,6 +2,7 @@ import torch as T
 import torch.optim as optim
 import os
 import wandb
+import gym
 
 from torch.distributions.categorical import Categorical
 
@@ -15,14 +16,22 @@ from pretrain.reward import ParticleReward
 from pretrain.data_augmentation import DataAugment
 from pretrain.contrastive_learning import ContrastiveLearner, ContrastiveLoss
 from pretrain.state_data import StateData
-from utils.network_utils import get_loader, do_gradient_step, \
-    do_accumulated_gradient_step
+from utils.network_utils import get_loader, do_accumulated_gradient_step
 from ppg.critic_training import train_critic_epoch
 
 
 class Agent(T.nn.Module):
-    def __init__(self, env, action_dim, config, load=False,
+    def __init__(self, env: gym.envs, action_dim: int, config: dict, load=False,
                  load_new_config=False):
+        """
+        Agent class for PPG + APT
+        Args:
+            env: gym environment to interact with
+            action_dim: number of available actions
+            config: configuration data
+            load: load from previous run
+            load_new_config: load a new config file
+        """
         super().__init__()
         self.env = env
         self.metrics = {}
@@ -66,10 +75,23 @@ class Agent(T.nn.Module):
             self.load_model()
 
             if load_new_config:
+                entropy_coeff = self.entropy_coeff
                 self.config = config
+                self.entropy_coeff = entropy_coeff
 
     @T.no_grad()
     def get_action(self, state):
+        """
+        Args:
+            state: torch tensor, current observation from environment
+
+        Returns:
+            action: int, selected action
+            log_prob: float, log probability of the selected action
+            aux value: float, state value as predicted by ppg value head 
+            log_dist: torch tensor, log distribution over actions
+
+        """
         action_probs, aux_value = self.actor(state)
 
         action_dist = Categorical(logits=action_probs)
@@ -80,6 +102,13 @@ class Agent(T.nn.Module):
         return action.item(), log_prob, aux_value.item(), log_dist
 
     def learn(self, is_pretrain):
+        """
+        Trains the different networks on the collected trajectories
+        Args:
+            is_pretrain: if reward is calculated in a self supervised 
+            fashion, as opposed to be given by the environment
+
+        """
         if is_pretrain:
             self.contrast_training_phase()
         self.ppo_training_phase()
@@ -90,6 +119,7 @@ class Agent(T.nn.Module):
             self.steps = 0
 
     def ppo_training_phase(self):
+        """ Trains the actor network on the PPO Objective """
         loader = get_loader(dset=self.trajectory, config=self.config)
 
         for epoch in range(self.config['train_iterations']):
@@ -98,6 +128,7 @@ class Agent(T.nn.Module):
             self.entropy_coeff *= self.config['entropy_decay']
 
     def aux_training_phase(self):
+        """ Trains the actor network on the PPG auxiliary Objective """
         self.trajectory.is_aux_epoch = True
 
         loader = get_loader(dset=self.trajectory, config=self.config)
@@ -108,9 +139,11 @@ class Agent(T.nn.Module):
         self.trajectory.is_aux_epoch = False
 
     def forget(self):
+        """ Removes the collected data after training"""
         self.trajectory = Trajectory()
 
     def contrast_training_phase(self):
+        """ Trains the encoder on the NT-Xent loss from SimCLR"""
         states = self.trajectory.states
         state_dset = StateData(states)
         loader = get_loader(dset=state_dset, config=self.config)
@@ -129,8 +162,6 @@ class Agent(T.nn.Module):
             do_accumulated_gradient_step(self.contrast_net,
                                          self.contrast_opt, loss,
                                          self.config, batch_idx, len(loader))
-            # do_gradient_step(self.contrast_net, self.contrast_opt, loss,
-            #                 self.config['grad_norm'])
 
             if self.use_wandb:
                 log_contrast_loss_batch(self, loss.item())
