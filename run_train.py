@@ -16,7 +16,7 @@ if __name__ == '__main__':
               'aux_freq': 32,
               'aux_iterations': 3,
               'gae_lambda': 0.95,
-              'batch_size': 256,  # 512 while pretraining, 32 after
+              'batch_size': 512,  # 512 while pretraining, 32 after
               'target_batch_size': 512,
               'value_clip': None,  # 0.4 alternatively
               'entropy_decay': 0.999,
@@ -32,7 +32,7 @@ if __name__ == '__main__':
               }
 
     SEED = 1337
-    NUM_TIMESTEPS = 4_000_000
+    NUM_TIMESTEPS = 250_000_000
     act_dim = 18
 
     environment.seed_everything(SEED)
