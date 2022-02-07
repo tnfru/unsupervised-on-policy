@@ -22,7 +22,7 @@ class Trajectory(T.utils.data.Dataset):
     def __len__(self):
         return len(self.states)
 
-    def append_step(self, state, state_val, action, reward, done,
+    def append_step(self, state, state_val, action, done,
                     log_prob, aux_val, log_dist):
         self.states.append(state)
         self.actions.append(action)
@@ -31,7 +31,10 @@ class Trajectory(T.utils.data.Dataset):
         self.aux_state_values.append(aux_val)
         self.state_vals.append(state_val)
         self.log_dists.append(log_dist)
-        self.rewards.append(reward)
+        # self.rewards.append(reward)
+
+    def append_rewards(self, rewards):
+        self.rewards.extend(rewards)
 
     def data_to_tensors(self):
         self.states = T.cat(self.states)

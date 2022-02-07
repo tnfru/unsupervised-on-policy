@@ -22,6 +22,7 @@ def run_episode(agent: T.nn.Module, trajectory: Trajectory, pretrain: bool):
 
     """
     state = agent.env.reset()
+    rewards = []
     done = False
     lives = agent.env.unwrapped.ale.lives()
 
@@ -32,8 +33,9 @@ def run_episode(agent: T.nn.Module, trajectory: Trajectory, pretrain: bool):
         state_val = agent.critic(state).squeeze().item()
         state = state.cpu()
         next_state, reward, done, _ = agent.env.step(action)
+        rewards.append(reward)
 
-        trajectory.append_step(state, state_val, action, reward, done,
+        trajectory.append_step(state, state_val, action, done,
                                log_prob, aux_val, log_dist)
 
         state = next_state
@@ -45,13 +47,17 @@ def run_episode(agent: T.nn.Module, trajectory: Trajectory, pretrain: bool):
     if pretrain:
         state_dset = StateData(trajectory.states)
         state_dset.fix_datatypes()
-        trajectory.rewards = calc_pretrain_rewards(agent, state_dset)
+        rewards = calc_pretrain_rewards(agent, state_dset).tolist()
+        trajectory.append_rewards(rewards)
 
         if agent.use_wandb:
             log_particle_reward(agent, trajectory.rewards,
                                 agent.reward_function.mean)
             log_running_estimates(agent, agent.reward_function.mean,
                                   agent.reward_function.var)
+
+    else:
+        trajectory.append_rewards(rewards)
 
     trajectory.calc_advantages(agent.config)
 
