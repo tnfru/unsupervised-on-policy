@@ -49,7 +49,7 @@ def train_ppo_batch(agent, states: T.tensor, actions: T.tensor,
 
     objective = ppo_loss + entropy_loss
 
-    kl_div = approx_kl_div(log_probs, old_log_probs, ratio, is_aux=False)
+    kl_div = approx_kl_div(log_probs, old_log_probs, is_aux=False)
 
     if config['kl_max'] is None or kl_div < config['kl_max']:
         # If KL divergence is too big we don't take gradient steps

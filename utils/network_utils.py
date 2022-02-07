@@ -60,7 +60,6 @@ def normalize(x: T.tensor):
 
 
 def approx_kl_div(log_probs: T.tensor, old_log_probs: T.tensor,
-                  ratio: T.tensor = None,
                   is_aux=False):
     """
     Efficient version to calculate kl divergence
@@ -78,18 +77,13 @@ def approx_kl_div(log_probs: T.tensor, old_log_probs: T.tensor,
     """
 
     if is_aux:
-        ratio = T.exp(log_probs - old_log_probs)
-        log_ratio = log_probs - old_log_probs
-        kl_div = ratio - 1 - log_ratio
-
-        return kl_div.mean()
+        loss = T.nn.KLDivLoss(log_target=True, reduction='batchmean')
+        return loss(log_probs, old_log_probs)
 
     else:
         with T.no_grad():
-            log_ratio = log_probs - old_log_probs
-            kl_div = ratio - 1 - log_ratio
-
-        return kl_div.mean()
+            loss = T.nn.KLDivLoss(log_target=True, reduction='batchmean')
+            return loss(log_probs, old_log_probs)
 
 
 def get_loader(dset, config, drop_last=False):

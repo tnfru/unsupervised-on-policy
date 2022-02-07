@@ -69,7 +69,7 @@ class Trajectory(T.utils.data.Dataset):
     def __getitem__(self, index):
         state = self.states[index]
         expected_return = self.expected_returns[index]
-        log_dist = self.log_dists[index]
+        log_dist = self.log_dists[index].squeeze()
         state_val = self.state_vals[index]
         advantage = self.advantages[index]
         # done = self.dones[index] not required by any loop
