@@ -62,14 +62,10 @@ def normalize(x: T.tensor):
 def approx_kl_div(log_probs: T.tensor, old_log_probs: T.tensor,
                   is_aux=False):
     """
-    Efficient version to calculate kl divergence
-    See Josh Schulmans Blogpost http://joschu.net/blog/kl-approx.html
-    We only calculate the gradient during the behavior cloning loss
-    calculation of the aux epochs.
+    Calculate kl divergence
     Args:
         log_probs: current log probs of actions
         old_log_probs: log probs of actions at the time of action selection
-        ratio: importance sampling ratio between new and old policy
         is_aux: if call is from within aux epoch
 
     Returns: torch tensor, approximation of KL divergence
@@ -77,17 +73,13 @@ def approx_kl_div(log_probs: T.tensor, old_log_probs: T.tensor,
     """
 
     if is_aux:
-        loss = T.nn.KLDivLoss(log_target=False, reduction='batchmean')
-        print('new', log_probs[0].exp().sum())
-        print('old', old_log_probs[0].exp().sum())
-        return loss(log_probs, old_log_probs.exp())
+        loss = T.nn.KLDivLoss(log_target=True, reduction='batchmean')
+        return loss(log_probs, old_log_probs)
 
     else:
         with T.no_grad():
-            loss = T.nn.KLDivLoss(log_target=False, reduction='batchmean')
-            print('new', log_probs[0].exp().sum())
-            print('old', old_log_probs[0].exp().sum())
-            return loss(log_probs, old_log_probs.exp())
+            loss = T.nn.KLDivLoss(log_target=True, reduction='batchmean')
+            return loss(log_probs, old_log_probs)
 
 
 def get_loader(dset, config, drop_last=False):
