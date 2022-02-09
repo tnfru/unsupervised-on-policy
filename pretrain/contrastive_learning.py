@@ -56,7 +56,6 @@ class ContrastiveLearner(nn.Module):
         self.to(self.device)
 
     def forward(self, x):
-        x = x / 255 - 0.5
         return self.backbone(x)
 
     def project(self, x):
