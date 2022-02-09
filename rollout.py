@@ -23,6 +23,7 @@ def run_episode(agent: T.nn.Module, trajectory: Trajectory, pretrain: bool):
     """
     state = agent.env.reset()
     rewards = []
+    steps_before = len(trajectory)
     done = False
     lives = agent.env.unwrapped.ale.lives()
 
@@ -45,7 +46,7 @@ def run_episode(agent: T.nn.Module, trajectory: Trajectory, pretrain: bool):
         log_rewards(rewards)
 
     if pretrain:
-        state_dset = StateData(trajectory.states)
+        state_dset = StateData(trajectory.states[steps_before:])
         state_dset.fix_datatypes()
         rewards = calc_pretrain_rewards(agent, state_dset).tolist()
         trajectory.append_rewards(rewards)
