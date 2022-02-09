@@ -46,9 +46,14 @@ def warn_about_aux_loss_scaling(aux_loss):
 
 
 def log_episode_length(agent, trajectory, steps_so_far):
-    agent.metrics.update({
-        'episode_length': len(trajectory) - steps_so_far
-    })
+    if len(trajectory) < agent.config['rollout_length']:
+        wandb.log({
+            'episode_length': len(trajectory) - steps_so_far
+        })
+    else:
+        agent.metrics.update({
+            'episode_length': len(trajectory) - steps_so_far
+        })
 
 
 def log_contrast_loss_batch(agent, loss):
