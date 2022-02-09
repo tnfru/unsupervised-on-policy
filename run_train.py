@@ -16,7 +16,7 @@ if __name__ == '__main__':
               'aux_freq': 32,
               'aux_iterations': 3,
               'gae_lambda': 0.95,
-              'batch_size': 512,  # 512 while pretraining, 32 after
+              'batch_size': 256,  # 512 while pretraining, 32 after
               'target_batch_size': 512,
               'value_clip': None,  # 0.4 alternatively
               'entropy_decay': 0.999,
@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
     environment.seed_everything(SEED)
     env = environment.create_env(config)
-    agent = Agent(env, action_dim=act_dim, config=config, load=True,
+    agent = Agent(env, action_dim=act_dim, config=config, load=False,
                   load_new_config=False)
 
     run_timesteps(agent, NUM_TIMESTEPS, is_pretrain=True)
