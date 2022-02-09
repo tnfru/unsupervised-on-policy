@@ -9,12 +9,14 @@ from utils.logger import log_episode_length, log_particle_reward, \
 from utils.logger import log_running_estimates
 
 
-def run_episode(agent: T.nn.Module, trajectory: Trajectory, pretrain: bool):
+def run_episode(agent: T.nn.Module, trajectory: Trajectory, pretrain: bool,
+                total_steps_done: int):
     """
     Runs one episode in the set environment
     Args:
         agent: agent handling the episode
         trajectory: place to store data in
+        total_steps_done: current timestep
         pretrain: if reward is given by environment or calculated in a self
         supervised fashion
 
@@ -43,8 +45,10 @@ def run_episode(agent: T.nn.Module, trajectory: Trajectory, pretrain: bool):
         lives = agent.env.unwrapped.ale.lives()
 
     if agent.use_wandb:
-        log_rewards(rewards)
-        log_episode_length(agent, agent.trajectory, steps_before)
+        log_rewards(agent, rewards)
+        log_episode_length(agent, len(rewards))
+        log_steps_done(agent, total_steps_done)
+        agent.log_metrics()
 
     if pretrain:
         state_dset = StateData(trajectory.states[steps_before:])
@@ -78,17 +82,16 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, is_pretrain: bool):
     agent.forget()
 
     while steps_done < num_timesteps:
-        agent.trajectory = run_episode(agent, agent.trajectory, is_pretrain)
+        agent.trajectory = run_episode(agent, agent.trajectory, is_pretrain,
+                                       steps_done)
 
         if len(agent.trajectory) >= agent.config['rollout_length']:
             steps_done += len(agent.trajectory)
-
             agent.trajectory.data_to_tensors()
-            agent.learn(is_pretrain=is_pretrain)
 
+            agent.learn(is_pretrain=is_pretrain)
             if agent.use_wandb:
-                log_steps_done(agent, steps_done)
-                agent.log_metrics()
+                agent.metrics.update({'mil env step': steps_done})
 
             agent.forget()
             agent.save_model()
