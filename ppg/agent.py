@@ -6,7 +6,7 @@ import gym
 
 from torch.distributions.categorical import Categorical
 
-from ppg.networks import PPG, CriticNet
+from ppg.networks import PPG, CriticNet, PPG_DQN_ARCH
 from utils.logger import init_logging, log_contrast_loss_batch, \
     log_contrast_loss_epoch
 from ppg.trajectory import Trajectory
@@ -36,7 +36,7 @@ class Agent(T.nn.Module):
         self.env = env
         self.metrics = {}
 
-        self.actor = PPG(action_dim, config['stacked_frames'])
+        self.actor = PPG_DQN_ARCH(action_dim, config['stacked_frames'])
         self.actor_opt = optim.Adam(
             self.actor.parameters(),
             lr=config['actor_lr']
@@ -111,6 +111,7 @@ class Agent(T.nn.Module):
         """
         if is_pretrain:
             self.contrast_training_phase()
+
         self.ppo_training_phase()
         self.steps += self.config['train_iterations']
 
