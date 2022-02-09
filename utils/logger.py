@@ -45,9 +45,9 @@ def warn_about_aux_loss_scaling(aux_loss):
                   f'learning')
 
 
-def log_episode_length(agent, trajectory):
+def log_episode_length(agent, trajectory, steps_so_far):
     agent.metrics.update({
-        'episode_length': len(trajectory)
+        'episode_length': len(trajectory) - steps_so_far
     })
 
 
