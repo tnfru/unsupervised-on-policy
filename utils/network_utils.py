@@ -31,7 +31,39 @@ def do_accumulated_gradient_step(network: T.nn.Module,
             T.nn.utils.clip_grad_norm_(network.parameters(), config[
                 'grad_norm'])
         optimizer.step()
-        optimizer.zero_grad()
+        clear_grad(network)
+
+
+def do_gradient_step(network: T.nn.Module,
+                     optimizer: T.optim.Optimizer,
+                     objective: T.tensor, config: dict,
+                     retain_graph=False):
+    """
+    If target batch size is bigger than the batch size, it will
+    accumulate gradient and do a gradient step when target batch size is
+    reached.
+    Args:
+        network: the network to perform the gradient step on
+        optimizer: the optimizer that performs the update
+        objective: loss or score function to calculate gradients
+        config: configuration of the agent
+        retain_graph: retain graph for further backprop
+    """
+
+    clear_grad(network)
+    objective.backward(retain_graph=retain_graph)
+
+    if config['grad_norm'] is not None:
+        T.nn.utils.clip_grad_norm_(network.parameters(), config[
+            'grad_norm'])
+    optimizer.step()
+
+
+def clear_grad(network):
+    # fast optimizer.zero_grad()
+    # see https://ai.plainenglish.io/best-performance-tuning-practices-for-pytorch-3ef06329d5fe
+    for param in network.parameters():
+        param.grad = None
 
 
 def data_to_device(rollout_data: tuple, device: T.device):
@@ -82,6 +114,7 @@ def approx_kl_div(log_probs: T.tensor, old_log_probs: T.tensor,
             return loss(log_probs, old_log_probs)
 
 
-def get_loader(dset, config, drop_last=False):
+def get_loader(dset, config, drop_last=False, num_workers=6):
     return DataLoader(dset, batch_size=config['batch_size'],
-                      shuffle=True, pin_memory=True, drop_last=drop_last)
+                      shuffle=True, pin_memory=True, drop_last=drop_last,
+                      num_workers=num_workers)
