@@ -5,7 +5,7 @@ from ppg.trajectory import Trajectory
 from pretrain.reward import calc_pretrain_rewards
 from pretrain.state_data import StateData
 from utils.logger import log_episode_length, log_particle_reward, \
-    log_rewards, log_steps_done
+    log_rewards, log_steps_done, log_ppo_env_steps
 from utils.logger import log_running_estimates
 
 
@@ -91,6 +91,7 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, is_pretrain: bool):
 
         if len(agent.trajectory) >= agent.config['rollout_length']:
             agent.trajectory.data_to_tensors()
+            log_ppo_env_steps(agent, steps_done)
 
             agent.learn(is_pretrain=is_pretrain)
 

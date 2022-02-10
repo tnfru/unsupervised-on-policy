@@ -80,3 +80,7 @@ def log_running_estimates(agent, mean, var):
         'running mean': mean,
         'running var': var
     })
+
+
+def log_ppo_env_steps(agent, steps):
+    agent.metrics.update({'mil env steps': steps / 1e6})
