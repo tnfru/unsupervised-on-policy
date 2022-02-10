@@ -34,7 +34,6 @@ if __name__ == '__main__':
     if config['is_pretrain']:
         config.update({
             'entropy_coeff': 0.001,
-            'entropy_decay': 0.9995,
             'batch_size': 512,
             'target_batch_size': 512,
             'rollout_length': 512,
