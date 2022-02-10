@@ -48,7 +48,7 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
             log_steps_done(agent, total_steps_done + len(rewards))
             agent.log_metrics()
 
-        episode_length = len(rewards)
+    episode_length = len(rewards)
 
     if pretrain:
         state_dset = StateData(agent.trajectory.states[steps_before:])
@@ -96,7 +96,7 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, is_pretrain: bool):
             if agent.use_wandb:
                 log_ppo_env_steps(agent, steps_done)
 
-            agent.learn(is_pretrain=is_pretrain)
+            agent.learn()
 
             agent.forget()
             agent.save_model()

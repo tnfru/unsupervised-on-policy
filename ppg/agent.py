@@ -103,13 +103,9 @@ class Agent(T.nn.Module):
 
         return action.item(), log_prob, aux_value.item(), log_dist
 
-    def learn(self, is_pretrain):
+    def learn(self):
         """
         Trains the different networks on the collected trajectories
-        Args:
-            is_pretrain: if reward is calculated in a self supervised 
-            fashion, as opposed to be given by the environment
-
         """
         self.ppo_training_phase()
         self.steps += self.config['train_iterations']
@@ -149,8 +145,6 @@ class Agent(T.nn.Module):
 
     def contrast_training_phase(self):
         """ Trains the encoder on the NT-Xent loss from SimCLR"""
-        #states = self.trajectory.states
-        #state_dset = StateData(states)
         loader = get_loader(dset=self.replay_buffer, config=self.config)
         total_contrast_loss = 0
 
