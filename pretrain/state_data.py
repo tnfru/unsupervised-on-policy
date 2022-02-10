@@ -30,7 +30,7 @@ class RepresentationData(T.utils.data.Dataset):
         return len(self.states)
 
     def append_state(self, state):
-        self.states.append(state.squueze())
+        self.states.append(state.squeeze())
 
     def __getitem__(self, index):
         state = self.states[index]
