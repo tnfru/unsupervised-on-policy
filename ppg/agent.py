@@ -58,6 +58,7 @@ class Agent(T.nn.Module):
 
         self.config = config
         self.entropy_coeff = config['entropy_coeff']
+        self.entropy_coeff /= 100.0 if config['is_pretrain'] else 1.0
         self.use_wandb = config['use_wandb']
         self.AUX_WARN_THRESHOLD = 100
         self.steps = 0

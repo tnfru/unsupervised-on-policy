@@ -18,7 +18,6 @@ if __name__ == '__main__':
               'gae_lambda': 0.95,
               'batch_size': 512,  # 512 while pretraining, 32 after
               'target_batch_size': 512,
-              'value_clip': None,  # 0.4 alternatively
               'entropy_decay': 0.999,
               'use_wandb': True,
               'discount_factor': 0.99,
@@ -28,6 +27,7 @@ if __name__ == '__main__':
               'temperature': 0.1,
               'frames_to_skip': 4,
               'stacked_frames': 4,
+              'is_pretrain': True,
               'prefix': 'PRETRAIN_NORMALIZED'
               }
 
@@ -40,4 +40,4 @@ if __name__ == '__main__':
     agent = Agent(env, action_dim=act_dim, config=config, load=False,
                   load_new_config=False)
 
-    run_timesteps(agent, NUM_TIMESTEPS, is_pretrain=True)
+    run_timesteps(agent, NUM_TIMESTEPS, is_pretrain=config['is_pretrain'])
