@@ -82,5 +82,11 @@ def log_running_estimates(agent, mean, var):
     })
 
 
+def log_entropy_coeff(agent):
+    agent.metrics.update({
+        'entropy_coeff': agent.entropy_coeff
+    })
+
+
 def log_ppo_env_steps(agent, steps):
     agent.metrics.update({'mil env steps': steps / 1e6})
