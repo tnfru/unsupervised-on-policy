@@ -149,9 +149,9 @@ class Agent(T.nn.Module):
 
     def contrast_training_phase(self):
         """ Trains the encoder on the NT-Xent loss from SimCLR"""
-        states = self.trajectory.states
-        state_dset = StateData(states)
-        loader = get_loader(dset=state_dset, config=self.config)
+        #states = self.trajectory.states
+        #state_dset = StateData(states)
+        loader = get_loader(dset=self.replay_buffer, config=self.config)
         total_contrast_loss = 0
 
         for batch_idx, state_batch in enumerate(loader):
