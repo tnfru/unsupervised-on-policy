@@ -6,9 +6,9 @@ import gym
 
 from torch.distributions.categorical import Categorical
 
-from ppg.networks import PPG, CriticNet
+from ppg.networks import PPG, CriticNet, PPG_DQN_ARCH
 from utils.logger import init_logging, log_contrast_loss_batch, \
-    log_contrast_loss_epoch
+    log_contrast_loss_epoch, log_entropy_coeff
 from ppg.trajectory import Trajectory
 from ppg.aux_training import train_aux_epoch
 from ppg.ppo_training import train_ppo_epoch
@@ -36,7 +36,7 @@ class Agent(T.nn.Module):
         self.env = env
         self.metrics = {}
 
-        self.actor = PPG(action_dim, config['stacked_frames'])
+        self.actor = PPG_DQN_ARCH(action_dim, config['stacked_frames'])
         self.actor_opt = optim.Adam(
             self.actor.parameters(),
             lr=config['actor_lr']
@@ -111,12 +111,19 @@ class Agent(T.nn.Module):
         """
         if is_pretrain:
             self.contrast_training_phase()
+
         self.ppo_training_phase()
         self.steps += self.config['train_iterations']
 
         if self.steps >= self.config['aux_freq']:
             self.aux_training_phase()
             self.steps = 0
+
+        self.entropy_coeff *= self.config['entropy_decay']
+
+        if self.use_wandb:
+            log_entropy_coeff(self)
+            self.log_metrics()
 
     def ppo_training_phase(self):
         """ Trains the actor network on the PPO Objective """
@@ -125,7 +132,6 @@ class Agent(T.nn.Module):
         for epoch in range(self.config['train_iterations']):
             train_ppo_epoch(agent=self, loader=loader)
             train_critic_epoch(agent=self, loader=loader)
-            self.entropy_coeff *= self.config['entropy_decay']
 
     def aux_training_phase(self):
         """ Trains the actor network on the PPG auxiliary Objective """
