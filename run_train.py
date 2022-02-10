@@ -7,7 +7,6 @@ if __name__ == '__main__':
               'kl_max': None,  # 0.05 used previously
               'beta': 1,
               'val_coeff': 1e-2,
-              'rollout_length': 256,
               'train_iterations': 1,
               'entropy_coeff': 0.01,
               'entropy_decay': 0.999,
@@ -28,6 +27,7 @@ if __name__ == '__main__':
               'frames_to_skip': 4,
               'stacked_frames': 4,
               'is_pretrain': True,
+              'steps_before_repr_learning': 1600,  # Paper value
               'prefix': 'PRETRAIN_NORMALIZED'
               }
 
@@ -36,8 +36,12 @@ if __name__ == '__main__':
             'entropy_coeff': 0.001,
             'batch_size': 512,
             'target_batch_size': 512,
-            'rollout_length': 512,
+            'replay_buffer_size': 10000
         })
+
+    config.update({
+        'rollout_length': max(config['target_batch_size'], 256)
+    })
 
     SEED = 1337
     NUM_TIMESTEPS = 250_000_000

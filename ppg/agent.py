@@ -18,6 +18,7 @@ from pretrain.contrastive_learning import ContrastiveLearner, ContrastiveLoss
 from pretrain.state_data import StateData
 from utils.network_utils import get_loader, do_accumulated_gradient_step
 from ppg.critic_training import train_critic_epoch
+from pretrain.state_data import RepresentationData
 
 
 class Agent(T.nn.Module):
@@ -55,6 +56,7 @@ class Agent(T.nn.Module):
         self.data_aug = DataAugment(config)
         self.reward_function = ParticleReward()
         self.trajectory = Trajectory()
+        self.replay_buffer = RepresentationData(config)
 
         self.config = config
         self.entropy_coeff = config['entropy_coeff']
@@ -109,9 +111,6 @@ class Agent(T.nn.Module):
             fashion, as opposed to be given by the environment
 
         """
-        if is_pretrain:
-            self.contrast_training_phase()
-
         self.ppo_training_phase()
         self.steps += self.config['train_iterations']
 
