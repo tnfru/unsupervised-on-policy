@@ -7,18 +7,18 @@ if __name__ == '__main__':
               'kl_max': None,  # 0.05 used previously
               'beta': 1,
               'val_coeff': 1e-2,
-              'rollout_length': 512,
+              'rollout_length': 256,
               'train_iterations': 1,
               'entropy_coeff': 0.01,
+              'entropy_decay': 0.999,
               'grad_norm': 10,  # 0.5 alternatively
               'critic_lr': 1e-3,
               'actor_lr': 3e-4,  # Paper val 1e-4 while pre-Training
               'aux_freq': 32,
               'aux_iterations': 3,
               'gae_lambda': 0.95,
-              'batch_size': 512,  # 512 while pretraining, 32 after
-              'target_batch_size': 512,
-              'entropy_decay': 0.999,
+              'batch_size': 32,  # 512 while pretraining, 32 after
+              'target_batch_size': 32,
               'use_wandb': True,
               'discount_factor': 0.99,
               'height': 84,
@@ -30,6 +30,15 @@ if __name__ == '__main__':
               'is_pretrain': True,
               'prefix': 'PRETRAIN_NORMALIZED'
               }
+
+    if config['is_pretrain']:
+        config.update({
+            'entropy_coeff': 0.001,
+            'entropy_decay': 0.9995,
+            'batch_size': 512,
+            'target_batch_size': 512,
+            'rollout_length': 512,
+        })
 
     SEED = 1337
     NUM_TIMESTEPS = 250_000_000
