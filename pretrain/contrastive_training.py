@@ -11,7 +11,7 @@ def train_contrastive_batch(agent):
 
     indices = T.randperm(len(agent.replay_buffer))[:batch_size]
 
-    state_batch = T.cat(itemgetter(*indices)(agent.replay_buffer))
+    state_batch = T.stack(itemgetter(*indices)(agent.replay_buffer))
     state_batch = state_batch.to(agent.device)
 
     view_1 = agent.data_aug(state_batch)
