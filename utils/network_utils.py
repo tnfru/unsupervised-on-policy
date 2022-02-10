@@ -82,7 +82,7 @@ def approx_kl_div(log_probs: T.tensor, old_log_probs: T.tensor,
             return loss(log_probs, old_log_probs)
 
 
-def get_loader(dset, config, drop_last=False, num_workers=2):
+def get_loader(dset, config, drop_last=False, num_workers=6):
     return DataLoader(dset, batch_size=config['batch_size'],
                       shuffle=True, pin_memory=True, drop_last=drop_last,
                       num_workers=num_workers)
