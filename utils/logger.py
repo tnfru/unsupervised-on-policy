@@ -1,6 +1,5 @@
 import wandb
 import warnings
-import torch as T
 import numpy as np
 
 
@@ -19,6 +18,7 @@ def log_ppo(agent, entropy_loss, kl_div, kl_max):
     else:
         exceeded = 1
     agent.metrics.update({'entropy loss': entropy_loss,
+                          'entropy': -entropy_loss / agent.entropy_coeff,
                           'kl div': kl_div.mean(),
                           'kl_exceeded': exceeded})
 
@@ -45,9 +45,9 @@ def warn_about_aux_loss_scaling(aux_loss):
                   f'learning')
 
 
-def log_episode_length(agent, trajectory):
+def log_episode_length(agent, episode_length):
     agent.metrics.update({
-        'episode_length': len(trajectory)
+        'episode_length': episode_length
     })
 
 
@@ -59,8 +59,8 @@ def log_contrast_loss_epoch(agent, loss):
     agent.metrics.update({'contrast loss epoch': loss})
 
 
-def log_rewards(rewards):
-    wandb.log({'reward': np.sum(rewards)})
+def log_rewards(agent, rewards):
+    agent.metrics.update({'reward': np.sum(rewards)})
 
 
 def log_steps_done(agent, steps):
@@ -81,3 +81,13 @@ def log_running_estimates(agent, mean, var):
         'running mean': mean,
         'running var': var
     })
+
+
+def log_entropy_coeff(agent):
+    agent.metrics.update({
+        'entropy_coeff': agent.entropy_coeff
+    })
+
+
+def log_ppo_env_steps(agent, steps):
+    agent.metrics.update({'mil env steps': steps / 1e6})
