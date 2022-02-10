@@ -91,7 +91,8 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, is_pretrain: bool):
 
         if len(agent.trajectory) >= agent.config['rollout_length']:
             agent.trajectory.data_to_tensors()
-            log_ppo_env_steps(agent, steps_done)
+            if agent.use_wandb:
+                log_ppo_env_steps(agent, steps_done)
 
             agent.learn(is_pretrain=is_pretrain)
 
