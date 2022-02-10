@@ -6,6 +6,7 @@ from pretrain.state_data import StateData
 from utils.logger import log_episode_length, log_particle_reward, \
     log_rewards, log_steps_done, log_ppo_env_steps
 from utils.logger import log_running_estimates
+from pretrain.contrastive_training import train_contrastive_batch
 
 
 def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
@@ -35,7 +36,7 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
         next_state, reward, done, _ = agent.env.step(action)
         rewards.append(reward)
 
-        agent.replay_buffer.append_state(state)
+        agent.replay_buffer.append(state.squeeze())
         agent.trajectory.append_step(state, state_val, action, done,
                                      log_prob, aux_val, log_dist)
 
@@ -44,7 +45,7 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
 
         if pretrain and total_steps_done >= agent.config[
             'steps_before_repr_learning']:
-            agent.contrast_training_phase()
+            train_contrastive_batch(agent)
             log_steps_done(agent, total_steps_done + len(rewards))
             agent.log_metrics()
 

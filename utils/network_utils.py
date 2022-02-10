@@ -34,6 +34,30 @@ def do_accumulated_gradient_step(network: T.nn.Module,
         optimizer.zero_grad()
 
 
+def do_gradient_step(network: T.nn.Module,
+                     optimizer: T.optim.Optimizer,
+                     objective: T.tensor, config: dict,
+                     retain_graph=False):
+    """
+    If target batch size is bigger than the batch size, it will
+    accumulate gradient and do a gradient step when target batch size is
+    reached.
+    Args:
+        network: the network to perform the gradient step on
+        optimizer: the optimizer that performs the update
+        objective: loss or score function to calculate gradients
+        config: configuration of the agent
+        retain_graph: retain graph for further backprop
+    """
+    optimizer.zero_grad()
+    objective.backward(retain_graph=retain_graph)
+
+    if config['grad_norm'] is not None:
+        T.nn.utils.clip_grad_norm_(network.parameters(), config[
+            'grad_norm'])
+    optimizer.step()
+
+
 def data_to_device(rollout_data: tuple, device: T.device):
     """Loads data to given device (GPU)"""
     data_on_device = []

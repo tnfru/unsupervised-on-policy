@@ -5,20 +5,18 @@ import wandb
 import gym
 
 from torch.distributions.categorical import Categorical
+from collections import deque
 
-from ppg.networks import PPG, CriticNet, PPG_DQN_ARCH
-from utils.logger import init_logging, log_contrast_loss_batch, \
-    log_contrast_loss_epoch, log_entropy_coeff
+from ppg.networks import CriticNet, PPG_DQN_ARCH
+from utils.logger import init_logging, log_entropy_coeff
 from ppg.trajectory import Trajectory
 from ppg.aux_training import train_aux_epoch
 from ppg.ppo_training import train_ppo_epoch
 from pretrain.reward import ParticleReward
 from pretrain.data_augmentation import DataAugment
 from pretrain.contrastive_learning import ContrastiveLearner, ContrastiveLoss
-from pretrain.state_data import StateData
-from utils.network_utils import get_loader, do_accumulated_gradient_step
+from utils.network_utils import get_loader
 from ppg.critic_training import train_critic_epoch
-from pretrain.state_data import RepresentationData
 
 
 class Agent(T.nn.Module):
@@ -56,7 +54,7 @@ class Agent(T.nn.Module):
         self.data_aug = DataAugment(config)
         self.reward_function = ParticleReward()
         self.trajectory = Trajectory()
-        self.replay_buffer = RepresentationData(config)
+        self.replay_buffer = deque(maxlen=config['replay_buffer_size'])
 
         self.config = config
         self.entropy_coeff = config['entropy_coeff']
@@ -142,34 +140,6 @@ class Agent(T.nn.Module):
     def forget(self):
         """ Removes the collected data after training"""
         self.trajectory = Trajectory()
-
-    def contrast_training_phase(self):
-        """ Trains the encoder on the NT-Xent loss from SimCLR"""
-        loader = get_loader(dset=self.replay_buffer, config=self.config)
-        total_contrast_loss = 0
-
-        for batch_idx, state_batch in enumerate(loader):
-            state_batch = state_batch.to(self.device)
-            view_1 = self.data_aug(state_batch)
-            view_2 = self.data_aug(state_batch)
-
-            projection_1 = self.contrast_net.project(view_1)
-            projection_2 = self.contrast_net.project(view_2)
-
-            loss = self.contrast_loss(projection_1, projection_2)
-
-            do_accumulated_gradient_step(self.contrast_net,
-                                         self.contrast_opt, loss,
-                                         self.config, batch_idx, len(loader))
-
-            if self.use_wandb:
-                log_contrast_loss_batch(self, loss.item())
-            total_contrast_loss += loss.item()
-
-        total_contrast_loss /= len(loader)
-
-        if self.use_wandb:
-            log_contrast_loss_epoch(self, total_contrast_loss)
 
     def save_model(self):
         os.makedirs(self.path, exist_ok=True)
