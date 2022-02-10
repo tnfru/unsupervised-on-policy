@@ -119,6 +119,9 @@ class Agent(T.nn.Module):
             self.aux_training_phase()
             self.steps = 0
 
+        if self.use_wandb:
+            self.log_metrics()
+
     def ppo_training_phase(self):
         """ Trains the actor network on the PPO Objective """
         loader = get_loader(dset=self.trajectory, config=self.config)
