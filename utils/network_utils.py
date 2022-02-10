@@ -31,7 +31,7 @@ def do_accumulated_gradient_step(network: T.nn.Module,
             T.nn.utils.clip_grad_norm_(network.parameters(), config[
                 'grad_norm'])
         optimizer.step()
-        optimizer.zero_grad()
+        clear_grad(network)
 
 
 def do_gradient_step(network: T.nn.Module,
@@ -49,13 +49,21 @@ def do_gradient_step(network: T.nn.Module,
         config: configuration of the agent
         retain_graph: retain graph for further backprop
     """
-    optimizer.zero_grad()
+
+    clear_grad(network)
     objective.backward(retain_graph=retain_graph)
 
     if config['grad_norm'] is not None:
         T.nn.utils.clip_grad_norm_(network.parameters(), config[
             'grad_norm'])
     optimizer.step()
+
+
+def clear_grad(network):
+    # fast optimizer.zero_grad()
+    # see https://ai.plainenglish.io/best-performance-tuning-practices-for-pytorch-3ef06329d5fe
+    for param in network.parameters():
+        param.grad = None
 
 
 def data_to_device(rollout_data: tuple, device: T.device):
