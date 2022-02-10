@@ -28,7 +28,7 @@ if __name__ == '__main__':
               'stacked_frames': 4,
               'is_pretrain': True,
               'steps_before_repr_learning': 1600,  # Paper value
-              'prefix': 'PRETRAIN_NORMALIZED'
+              'prefix': 'PRETRAIN_REPR'
               }
 
     if config['is_pretrain']:
