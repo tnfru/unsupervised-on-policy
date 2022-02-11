@@ -64,11 +64,11 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
             else:
                 agent.trajectory.append_rewards(rewards)
 
+            log_steps_done(agent, total_steps_done)
             online_training(agent, total_steps_done)
 
     log_rewards(agent, rewards)
     log_episode_length(agent, len(rewards))
-    log_steps_done(agent, total_steps_done)
     agent.log_metrics()
 
     return total_steps_done
