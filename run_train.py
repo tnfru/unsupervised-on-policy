@@ -18,7 +18,7 @@ if __name__ == '__main__':
               'gae_lambda': 0.95,
               'batch_size': 32,  # 512 while pretraining, 32 after
               'target_batch_size': 32,
-              'use_wandb': False,
+              'use_wandb': True,
               'discount_factor': 0.99,
               'height': 84,
               'width': 84,
