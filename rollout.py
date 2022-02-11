@@ -36,7 +36,8 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
         next_state, reward, done, _ = agent.env.step(action)
         rewards.append(reward)
 
-        agent.replay_buffer.append(state.squeeze())
+        idx = total_steps_done % agent.config['replay_buffer_size']
+        agent.replay_buffer[idx] = state.squeeze()
         agent.trajectory.append_step(state, state_val, action, done,
                                      log_prob, aux_val, log_dist)
 

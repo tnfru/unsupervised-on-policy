@@ -1,27 +1,28 @@
 import torch as T
-
-if T.cuda.is_available():
-    from apex.optimizers import FusedAdam as Adam
-else:
-    from torch.optim import Adam
-
+from torch.distributions.categorical import Categorical
 import os
 import wandb
 import gym
 
-from torch.distributions.categorical import Categorical
-from collections import deque
-
 from ppg.networks import CriticNet, PPG_DQN_ARCH
-from utils.logger import init_logging, log_entropy_coeff
 from ppg.trajectory import Trajectory
 from ppg.aux_training import train_aux_epoch
 from ppg.ppo_training import train_ppo_epoch
+from ppg.critic_training import train_critic_epoch
 from pretrain.reward import ParticleReward
 from pretrain.data_augmentation import DataAugment
 from pretrain.contrastive_learning import ContrastiveLearner, ContrastiveLoss
 from utils.network_utils import get_loader
-from ppg.critic_training import train_critic_epoch
+from utils.logger import init_logging, log_entropy_coeff
+
+try:
+    from apex.optimizers import FusedAdam as Adam
+
+    print('Using APEX optimizer')
+except ModuleNotFoundError:
+    from torch.optim import Adam
+
+    print('Apex Optimizers not installed, defaulting to torch OPT')
 
 
 class Agent(T.nn.Module):
@@ -53,8 +54,8 @@ class Agent(T.nn.Module):
         self.data_aug = DataAugment(config)
         self.reward_function = ParticleReward()
         self.trajectory = Trajectory()
-        self.replay_buffer = deque(maxlen=config['replay_buffer_size'])
-        # self.replay_buffer = T.zeros(config['replay_buffer_size'], )
+        self.replay_buffer = T.zeros(config['replay_buffer_size'], config[
+            'stacked_frames'], config['height'], config['width'])
 
         self.config = config
         self.entropy_coeff = config['entropy_coeff']
