@@ -1,22 +1,28 @@
 import torch as T
-import torch.optim as optim
+from torch.distributions.categorical import Categorical
 import os
 import wandb
 import gym
 
-from torch.distributions.categorical import Categorical
-from collections import deque
-
 from ppg.networks import CriticNet, PPG_DQN_ARCH
-from utils.logger import init_logging, log_entropy_coeff
 from ppg.trajectory import Trajectory
 from ppg.aux_training import train_aux_epoch
 from ppg.ppo_training import train_ppo_epoch
+from ppg.critic_training import train_critic_epoch
 from pretrain.reward import ParticleReward
 from pretrain.data_augmentation import DataAugment
 from pretrain.contrastive_learning import ContrastiveLearner, ContrastiveLoss
 from utils.network_utils import get_loader
-from ppg.critic_training import train_critic_epoch
+from utils.logger import init_logging, log_entropy_coeff
+
+try:
+    from apex.optimizers import FusedAdam as Adam
+
+    print('Using APEX optimizer')
+except ModuleNotFoundError:
+    from torch.optim import Adam
+
+    print('Apex Optimizers not installed, defaulting to PyTorch Optimizer')
 
 
 class Agent(T.nn.Module):
@@ -36,25 +42,20 @@ class Agent(T.nn.Module):
         self.metrics = {}
 
         self.actor = PPG_DQN_ARCH(action_dim, config['stacked_frames'])
-        self.actor_opt = optim.Adam(
-            self.actor.parameters(),
-            lr=config['actor_lr']
-        )
+        self.actor_opt = Adam(self.actor.parameters(),
+                              lr=config['actor_lr'])
         self.critic = CriticNet(config)
-        self.critic_opt = optim.Adam(
-            self.critic.parameters(),
-            lr=config['critic_lr']
-        )
+        self.critic_opt = Adam(self.critic.parameters(),
+                               lr=config['critic_lr'])
         self.contrast_net = ContrastiveLearner(config)
-        self.contrast_opt = optim.Adam(
-            self.contrast_net.parameters(),
-            lr=config['contrast_lr']
-        )
+        self.contrast_opt = Adam(self.contrast_net.parameters(),
+                                 lr=config['contrast_lr'])
         self.contrast_loss = ContrastiveLoss(config)
         self.data_aug = DataAugment(config)
         self.reward_function = ParticleReward()
         self.trajectory = Trajectory()
-        self.replay_buffer = deque(maxlen=config['replay_buffer_size'])
+        self.replay_buffer = T.zeros(config['replay_buffer_size'], config[
+            'stacked_frames'], config['height'], config['width'])
 
         self.config = config
         self.entropy_coeff = config['entropy_coeff']
@@ -67,9 +68,7 @@ class Agent(T.nn.Module):
             'cuda' if T.cuda.is_available() else 'cpu')
         self.to(self.device)
 
-        if self.use_wandb:
-            prefix = config['prefix']
-            init_logging(config, self, prefix)
+        init_logging(config, self, config['prefix'])
 
         if load:
             self.load_model()
@@ -114,9 +113,8 @@ class Agent(T.nn.Module):
 
         self.entropy_coeff *= self.config['entropy_decay']
 
-        if self.use_wandb:
-            log_entropy_coeff(self)
-            self.log_metrics()
+        log_entropy_coeff(self)
+        self.log_metrics()
 
     def ppo_training_phase(self):
         """ Trains the actor network on the PPO Objective """
@@ -151,5 +149,6 @@ class Agent(T.nn.Module):
         self.load_state_dict(T.load(PATH))
 
     def log_metrics(self):
-        wandb.log(self.metrics)
-        self.metrics = {}
+        if self.use_wandb:
+            wandb.log(self.metrics)
+            self.metrics = {}

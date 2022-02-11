@@ -10,7 +10,8 @@ if __name__ == '__main__':
               'train_iterations': 1,
               'entropy_coeff': 0.01,
               'entropy_decay': 0.999,
-              'grad_norm': 10,  # 0.5 alternatively
+              'grad_norm': 10,
+              'grad_norm_ppg': 0.5,
               'critic_lr': 1e-3,
               'actor_lr': 3e-4,  # Paper val 1e-4 while pre-Training
               'aux_freq': 32,

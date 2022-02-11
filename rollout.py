@@ -36,7 +36,9 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
         next_state, reward, done, _ = agent.env.step(action)
         rewards.append(reward)
 
-        agent.replay_buffer.append(state.squeeze())
+        total_steps_done += 1
+        idx = total_steps_done % agent.config['replay_buffer_size']
+        agent.replay_buffer[idx] = state.squeeze()
         agent.trajectory.append_step(state, state_val, action, done,
                                      log_prob, aux_val, log_dist)
 
@@ -46,35 +48,42 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
         if pretrain and total_steps_done >= agent.config[
             'steps_before_repr_learning']:
             train_contrastive_batch(agent)
-            log_steps_done(agent, total_steps_done + len(rewards))
+            log_steps_done(agent, total_steps_done)
             agent.log_metrics()
 
-    episode_length = len(rewards)
+        if total_steps_done % agent.config['rollout_length'] == 0:
+            if pretrain:
+                state_dset = StateData(agent.trajectory.states)
+                state_dset.fix_datatypes()
+                particle_rewards = calc_pretrain_rewards(agent,
+                                                         state_dset).tolist()
+                agent.trajectory.append_rewards(particle_rewards)
+                log_particle_reward(agent, particle_rewards)
+                log_running_estimates(agent)
 
-    if pretrain:
-        state_dset = StateData(agent.trajectory.states[steps_before:])
-        state_dset.fix_datatypes()
-        particle_rewards = calc_pretrain_rewards(agent, state_dset).tolist()
-        agent.trajectory.append_rewards(particle_rewards)
+            else:
+                agent.trajectory.append_rewards(rewards)
 
-        if agent.use_wandb:
-            log_particle_reward(agent, particle_rewards,
-                                agent.reward_function.mean)
-            log_running_estimates(agent, agent.reward_function.mean,
-                                  agent.reward_function.var)
+            log_steps_done(agent, total_steps_done)
+            online_training(agent, total_steps_done)
 
-    else:
-        agent.trajectory.append_rewards(rewards)
+    log_rewards(agent, rewards)
+    log_episode_length(agent, len(rewards))
+    log_steps_done(agent, total_steps_done)
+    agent.log_metrics()
 
+    return total_steps_done
+
+
+def online_training(agent, total_steps_done):
     agent.trajectory.calc_advantages(agent.config)
+    agent.trajectory.data_to_tensors()
+    log_ppo_env_steps(agent, total_steps_done)
 
-    if agent.use_wandb:
-        log_rewards(agent, rewards)
-        log_episode_length(agent, episode_length)
-        log_steps_done(agent, total_steps_done)
-        agent.log_metrics()
+    agent.learn()
 
-    return total_steps_done + episode_length
+    agent.forget()
+    agent.save_model()
 
 
 def run_timesteps(agent: T.nn.Module, num_timesteps: int, is_pretrain: bool):
@@ -91,13 +100,3 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, is_pretrain: bool):
 
     while steps_done < num_timesteps:
         steps_done = run_episode(agent, is_pretrain, steps_done)
-
-        if len(agent.trajectory) >= agent.config['rollout_length']:
-            agent.trajectory.data_to_tensors()
-            if agent.use_wandb:
-                log_ppo_env_steps(agent, steps_done)
-
-            agent.learn()
-
-            agent.forget()
-            agent.save_model()
