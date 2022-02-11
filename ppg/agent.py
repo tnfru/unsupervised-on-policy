@@ -22,7 +22,7 @@ try:
 except ModuleNotFoundError:
     from torch.optim import Adam
 
-    print('Apex Optimizers not installed, defaulting to torch OPT')
+    print('Apex Optimizers not installed, defaulting to PyTorch Optimizer')
 
 
 class Agent(T.nn.Module):
