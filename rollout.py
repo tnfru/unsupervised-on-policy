@@ -25,7 +25,6 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
     rewards = []
     done = False
     lives = agent.env.unwrapped.ale.lives()
-    is_training_step = False
 
     while not (lives == 0 and done):
         state = T.tensor(state, dtype=T.float, device=agent.device)
@@ -37,17 +36,16 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
         rewards.append(reward)
 
         total_steps_done += 1
-        idx = total_steps_done % agent.config['replay_buffer_size']
-        agent.replay_buffer[idx] = state.squeeze()
         agent.trajectory.append_step(state, state_val, action, done,
                                      log_prob, aux_val, log_dist)
-        if not pretrain:
+        if pretrain:
+            idx = total_steps_done % agent.config['replay_buffer_size']
+            agent.replay_buffer[idx] = state.squeeze()
+        else:
             agent.trajectory.append_reward(reward)
 
         state = next_state
         lives = agent.env.unwrapped.ale.lives()
-        is_training_step = total_steps_done % agent.config[
-            'rollout_length'] == 0
 
         if pretrain and total_steps_done >= agent.config[
             'steps_before_repr_learning']:
@@ -55,7 +53,7 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
             log_steps_done(agent, total_steps_done)
             agent.log_metrics()
 
-        if is_training_step:
+        if total_steps_done % agent.config['rollout_length'] == 0:
             if pretrain:
                 state_dset = StateData(agent.trajectory.states)
                 state_dset.fix_datatypes()
@@ -65,7 +63,6 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
                 log_particle_reward(agent, particle_rewards)
                 log_running_estimates(agent)
 
-            log_steps_done(agent, total_steps_done)
             online_training(agent, total_steps_done)
 
     log_rewards(agent, rewards)
@@ -80,6 +77,7 @@ def online_training(agent, total_steps_done):
     agent.trajectory.calc_advantages(agent.config)
     agent.trajectory.data_to_tensors()
     log_ppo_env_steps(agent, total_steps_done)
+    log_steps_done(agent, total_steps_done)
 
     agent.learn()
 
