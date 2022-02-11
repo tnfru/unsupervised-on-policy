@@ -29,7 +29,7 @@ if __name__ == '__main__':
               'stacked_frames': 4,
               'is_pretrain': True,
               'steps_before_repr_learning': 1600,  # Paper value
-              'prefix': 'PRETRAIN_REPR'
+              'prefix': 'PRETRAIN_GRADNORMS_ENTSCALE'
               }
 
     if config['is_pretrain']:
