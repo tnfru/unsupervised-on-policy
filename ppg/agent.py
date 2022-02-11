@@ -68,9 +68,7 @@ class Agent(T.nn.Module):
             'cuda' if T.cuda.is_available() else 'cpu')
         self.to(self.device)
 
-        if self.use_wandb:
-            prefix = config['prefix']
-            init_logging(config, self, prefix)
+        init_logging(config, self, config['prefix'])
 
         if load:
             self.load_model()
@@ -115,9 +113,8 @@ class Agent(T.nn.Module):
 
         self.entropy_coeff *= self.config['entropy_decay']
 
-        if self.use_wandb:
-            log_entropy_coeff(self)
-            self.log_metrics()
+        log_entropy_coeff(self)
+        self.log_metrics()
 
     def ppo_training_phase(self):
         """ Trains the actor network on the PPO Objective """
@@ -152,5 +149,6 @@ class Agent(T.nn.Module):
         self.load_state_dict(T.load(PATH))
 
     def log_metrics(self):
-        wandb.log(self.metrics)
-        self.metrics = {}
+        if self.use_wandb:
+            wandb.log(self.metrics)
+            self.metrics = {}

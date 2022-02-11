@@ -41,7 +41,7 @@ def train_aux_batch(agent: T.nn.Module, states: T.tensor,
     action_logits, aux_values = agent.actor(states)
 
     if T.isnan(action_logits).any():  # Necessary due to Torch bug
-        log_nan_aux()
+        log_nan_aux(agent)
         return
 
     action_dist = Categorical(logits=action_logits)

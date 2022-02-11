@@ -58,29 +58,26 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
                 particle_rewards = calc_pretrain_rewards(agent,
                                                          state_dset).tolist()
                 agent.trajectory.append_rewards(particle_rewards)
-                if agent.use_wandb:
-                    log_particle_reward(agent, particle_rewards)
-                    log_running_estimates(agent)
+                log_particle_reward(agent, particle_rewards)
+                log_running_estimates(agent)
 
             else:
                 agent.trajectory.append_rewards(rewards)
 
-            agent.trajectory.calc_advantages(agent.config)
-            online_training(agent, total_steps_done, pretrain)
+            online_training(agent, total_steps_done)
 
-    if agent.use_wandb:
-        log_rewards(agent, rewards)
-        log_episode_length(agent, len(rewards))
-        log_steps_done(agent, total_steps_done)
-        agent.log_metrics()
+    log_rewards(agent, rewards)
+    log_episode_length(agent, len(rewards))
+    log_steps_done(agent, total_steps_done)
+    agent.log_metrics()
 
     return total_steps_done
 
 
-def online_training(agent, total_steps_done, pretrain):
+def online_training(agent, total_steps_done):
+    agent.trajectory.calc_advantages(agent.config)
     agent.trajectory.data_to_tensors()
-    if agent.use_wandb:
-        log_ppo_env_steps(agent, total_steps_done)
+    log_ppo_env_steps(agent, total_steps_done)
 
     agent.learn()
 
