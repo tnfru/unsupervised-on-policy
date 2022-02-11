@@ -29,16 +29,15 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
 
     while not (lives == 0 and done):
         action, log_prob, aux_val, log_dist = agent.get_action(state)
-
-        if pretrain:
-            state = state.cpu()
-
         next_state, reward, done, _ = agent.env.step(action)
         next_state = T.from_numpy(next_state).to(agent.device).float()
         next_state = rearrange(next_state, 'h w c -> 1 c h w')
-        rewards.append(reward)
 
+        rewards.append(reward)
         total_steps_done += 1
+
+        if pretrain:
+            state = state.cpu()
         agent.trajectory.append_step(state, action, next_state, done,
                                      log_prob, aux_val, log_dist)
         if pretrain:
@@ -59,7 +58,8 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
         if len(agent.trajectory) == agent.config['rollout_length']:
             with T.no_grad():
                 states = T.cat(agent.trajectory.states).to(agent.device)
-                agent.trajectory.state_vals = agent.critic(states)
+                agent.trajectory.state_vals = agent.critic(
+                    states).detach().cpu()
 
             if pretrain:
                 state_dset = T.cat(agent.trajectory.next_states)
