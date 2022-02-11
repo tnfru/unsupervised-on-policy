@@ -67,6 +67,10 @@ def log_steps_done(agent, steps):
     agent.metrics.update({'million env steps': steps / 1e6})
 
 
+def log_nan_aux():
+    wandb.log({'nan during aux': 1})
+
+
 def log_particle_reward(agent, rewards, mean):
     agent.metrics.update({
         'particle reward sum': np.sum(rewards),

@@ -4,7 +4,7 @@ from torch.distributions.categorical import Categorical
 
 from utils.network_utils import data_to_device, approx_kl_div
 from utils.network_utils import do_accumulated_gradient_step
-from utils.logger import warn_about_aux_loss_scaling, log_aux
+from utils.logger import warn_about_aux_loss_scaling, log_aux, log_nan_aux
 
 
 def train_aux_epoch(agent: T.nn.Module, loader: T.utils.data.DataLoader):
@@ -39,6 +39,11 @@ def train_aux_batch(agent: T.nn.Module, states: T.tensor,
     """
     config = agent.config
     action_logits, aux_values = agent.actor(states)
+
+    if T.isnan(action_logits).any():  # Necessary due to Torch bug
+        log_nan_aux()
+        return
+
     action_dist = Categorical(logits=action_logits)
     log_probs = action_dist.probs.log()
     kl_div = approx_kl_div(log_probs, old_log_probs, is_aux=True)
