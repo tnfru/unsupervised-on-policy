@@ -23,9 +23,9 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
     """
     state = agent.env.reset()
     rewards = []
-    steps_before = len(agent.trajectory)
     done = False
     lives = agent.env.unwrapped.ale.lives()
+    is_training_step = False
 
     while not (lives == 0 and done):
         state = T.tensor(state, dtype=T.float, device=agent.device)
@@ -44,6 +44,8 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
 
         state = next_state
         lives = agent.env.unwrapped.ale.lives()
+        is_training_step = total_steps_done % agent.config[
+            'rollout_length'] == 0
 
         if pretrain and total_steps_done >= agent.config[
             'steps_before_repr_learning']:
@@ -51,7 +53,7 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
             log_steps_done(agent, total_steps_done)
             agent.log_metrics()
 
-        if total_steps_done % agent.config['rollout_length'] == 0:
+        if is_training_step:
             if pretrain:
                 state_dset = StateData(agent.trajectory.states)
                 state_dset.fix_datatypes()
@@ -62,10 +64,15 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
                 log_running_estimates(agent)
 
             else:
-                agent.trajectory.append_rewards(rewards)
+                reward_idx = -agent.config['rollout_length']
+                agent.trajectory.append_rewards(rewards[reward_idx:])
 
             log_steps_done(agent, total_steps_done)
             online_training(agent, total_steps_done)
+
+    if not pretrain and not is_training_step:
+        reward_idx = -(len(rewards) % agent.config['rollout_length'])
+        agent.trajectory.append_rewards(rewards[reward_idx:])
 
     log_rewards(agent, rewards)
     log_episode_length(agent, len(rewards))
