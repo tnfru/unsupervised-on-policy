@@ -65,9 +65,8 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
             else:
                 agent.trajectory.append_rewards(rewards)
 
+            agent.trajectory.calc_advantages(agent.config)
             online_training(agent, total_steps_done, pretrain)
-
-    agent.trajectory.calc_advantages(agent.config)
 
     if agent.use_wandb:
         log_rewards(agent, rewards)
