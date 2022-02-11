@@ -1,5 +1,10 @@
 import torch as T
-import torch.optim as optim
+
+if T.cuda.is_available():
+    import apex.optimizers.FusedAdam as Adam
+else:
+    from torch.optim import Adam
+
 import os
 import wandb
 import gym
@@ -36,20 +41,14 @@ class Agent(T.nn.Module):
         self.metrics = {}
 
         self.actor = PPG_DQN_ARCH(action_dim, config['stacked_frames'])
-        self.actor_opt = optim.Adam(
-            self.actor.parameters(),
-            lr=config['actor_lr']
-        )
+        self.actor_opt = Adam(self.actor.parameters(),
+                              lr=config['actor_lr'])
         self.critic = CriticNet(config)
-        self.critic_opt = optim.Adam(
-            self.critic.parameters(),
-            lr=config['critic_lr']
-        )
+        self.critic_opt = Adam(self.critic.parameters(),
+                               lr=config['critic_lr'])
         self.contrast_net = ContrastiveLearner(config)
-        self.contrast_opt = optim.Adam(
-            self.contrast_net.parameters(),
-            lr=config['contrast_lr']
-        )
+        self.contrast_opt = Adam(self.contrast_net.parameters(),
+                                 lr=config['contrast_lr'])
         self.contrast_loss = ContrastiveLoss(config)
         self.data_aug = DataAugment(config)
         self.reward_function = ParticleReward()
