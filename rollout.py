@@ -48,7 +48,7 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
         if pretrain and total_steps_done >= agent.config[
             'steps_before_repr_learning']:
             train_contrastive_batch(agent)
-            log_steps_done(agent, total_steps_done + len(rewards))
+            log_steps_done(agent, total_steps_done)
             agent.log_metrics()
 
     episode_length = len(rewards)
