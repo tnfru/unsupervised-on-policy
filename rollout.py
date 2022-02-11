@@ -30,13 +30,15 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
         state = T.tensor(state, dtype=T.float, device=agent.device)
         state = rearrange(state, 'h w c -> 1 c h w')
         action, log_prob, aux_val, log_dist = agent.get_action(state)
-        state_val = agent.critic(state).squeeze().item()
-        state = state.cpu()
+
+        if pretrain:
+            state = state.cpu()
+
         next_state, reward, done, _ = agent.env.step(action)
         rewards.append(reward)
 
         total_steps_done += 1
-        agent.trajectory.append_step(state, state_val, action, done,
+        agent.trajectory.append_step(state, action, next_state, done,
                                      log_prob, aux_val, log_dist)
         if pretrain:
             idx = total_steps_done % agent.config['replay_buffer_size']
@@ -53,10 +55,12 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
             log_steps_done(agent, total_steps_done)
             agent.log_metrics()
 
-        if total_steps_done % agent.config['rollout_length'] == 0:
+        if len(agent.trajectory) == agent.config['rollout_length']:
+            with T.no_grad():
+                agent.trajectory.state_vals = agent.critic(
+                    T.cat(agent.trajectory.states))
             if pretrain:
-                state_dset = StateData(agent.trajectory.states)
-                state_dset.fix_datatypes()
+                state_dset = T.cat(agent.trajectory.next_states)
                 particle_rewards = calc_pretrain_rewards(agent,
                                                          state_dset).tolist()
                 agent.trajectory.extend_rewards(particle_rewards)

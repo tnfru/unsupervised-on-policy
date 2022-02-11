@@ -7,6 +7,7 @@ from utils.network_utils import normalize
 class Trajectory(T.utils.data.Dataset):
     def __init__(self):
         self.states = []
+        self.next_states = []
         self.actions = []
         self.rewards = []
         self.log_probs = []
@@ -18,18 +19,19 @@ class Trajectory(T.utils.data.Dataset):
         self.state_vals = []
         self.aux_rets = []
         self.is_aux_epoch = False
+        self.is_critic_epoch = False
 
     def __len__(self):
         return len(self.states)
 
-    def append_step(self, state, state_val, action, done,
+    def append_step(self, state, action, next_state, done,
                     log_prob, aux_val, log_dist):
         self.states.append(state)
         self.actions.append(action)
+        self.next_states.append(next_state)
         self.dones.append(done)
         self.log_probs.append(log_prob)
         self.aux_state_values.append(aux_val)
-        self.state_vals.append(state_val)
         self.log_dists.append(log_dist)
 
     def append_reward(self, reward):
@@ -37,6 +39,9 @@ class Trajectory(T.utils.data.Dataset):
 
     def extend_rewards(self, rewards):
         self.rewards.extend(rewards)
+
+    def extend_state_vals(self, state_vals):
+        self.state_vals.extend(state_vals)
 
     def data_to_tensors(self):
         self.states = T.cat(self.states)
@@ -75,14 +80,13 @@ class Trajectory(T.utils.data.Dataset):
         state = self.states[index]
         expected_return = self.expected_returns[index]
         log_dist = self.log_dists[index].squeeze()
-        state_val = self.state_vals[index]
         advantage = self.advantages[index]
         # done = self.dones[index] not required by any loop
 
         if self.is_aux_epoch:
             aux_ret = self.aux_rets[index]
-            return state, expected_return, aux_ret, state_val, log_dist
+            return state, expected_return, aux_ret, log_dist
         else:
             action = self.actions[index]
             log_prob = self.log_probs[index]
-            return state, action, expected_return, state_val, advantage, log_prob
+            return state, action, expected_return, advantage, log_prob

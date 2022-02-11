@@ -54,8 +54,9 @@ class Agent(T.nn.Module):
         self.data_aug = DataAugment(config)
         self.reward_function = ParticleReward()
         self.trajectory = Trajectory()
-        self.replay_buffer = T.zeros(config['replay_buffer_size'], config[
-            'stacked_frames'], config['height'], config['width'])
+        if self.config['is_pretrain']:
+            self.replay_buffer = T.zeros(config['replay_buffer_size'], config[
+                'stacked_frames'], config['height'], config['width'])
 
         self.config = config
         self.entropy_coeff = config['entropy_coeff']
@@ -133,6 +134,7 @@ class Agent(T.nn.Module):
         for aux_epoch in range(self.config['aux_iterations']):
             train_aux_epoch(agent=self, loader=loader)
             train_critic_epoch(agent=self, loader=loader, is_aux=True)
+
         self.trajectory.is_aux_epoch = False
 
     def forget(self):

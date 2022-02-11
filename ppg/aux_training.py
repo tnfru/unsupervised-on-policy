@@ -17,8 +17,8 @@ def train_aux_epoch(agent: T.nn.Module, loader: T.utils.data.DataLoader):
     num_batches = len(loader)
 
     for batch_idx, rollout_data in enumerate(loader):
-        states, expected_returns, aux_returns, state_values, log_dists = data_to_device(
-            rollout_data, agent.device)
+        states, _, aux_returns, log_dists = data_to_device(rollout_data,
+                                                           agent.device)
         aux_returns = aux_returns.unsqueeze(1)
 
         train_aux_batch(agent=agent, states=states,

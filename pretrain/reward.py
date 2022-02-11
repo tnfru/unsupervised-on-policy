@@ -82,7 +82,7 @@ class ParticleReward(T.nn.Module):
 
 
 @T.no_grad()
-def calc_pretrain_rewards(agent: T.nn.Module, state_set: StateData):
+def calc_pretrain_rewards(agent: T.nn.Module, state_set):
     """
 
     Args:
@@ -92,18 +92,15 @@ def calc_pretrain_rewards(agent: T.nn.Module, state_set: StateData):
     Returns: rewards for all given states
 
     """
-    loader = DataLoader(state_set, batch_size=agent.config[
-        'batch_size'], shuffle=False, pin_memory=True, drop_last=False)
 
     all_rewards = []
 
-    for state_batch in loader:
-        state_batch = state_batch.to(agent.device)
-        representations = agent.contrast_net(state_batch)
-        rewards = agent.reward_function.calculate_reward(representations)
+    state_set = state_set.to(agent.device)
+    representations = agent.contrast_net(state_set)
+    rewards = agent.reward_function.calculate_reward(representations)
 
-        rewards = rewards.cpu()
-        all_rewards.append(rewards)
+    rewards = rewards.cpu()
+    all_rewards.append(rewards)
 
     all_rewards = T.cat(all_rewards)
 

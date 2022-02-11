@@ -18,11 +18,11 @@ def train_critic_epoch(agent: T.nn.Module, loader: T.utils.data.DataLoader,
     num_batches = len(loader)
     for batch_idx, rollout_data in enumerate(loader):
         if is_aux:
-            states, expected_returns, aux_returns, state_values, log_dists = data_to_device(
+            states, expected_returns, _, _ = data_to_device(
                 rollout_data, agent.device)
         else:
-            states, actions, expected_returns, state_values, advantages, \
-            log_probs = data_to_device(rollout_data, agent.device)
+            states, actions, expected_returns, _, _ = data_to_device(
+                rollout_data, agent.device)
         expected_returns = expected_returns.unsqueeze(1)
         train_critic_batch(agent=agent, states=states,
                            expected_returns=expected_returns,
