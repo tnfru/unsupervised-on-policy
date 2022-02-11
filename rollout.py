@@ -21,20 +21,21 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
     Returns: new number of steps done
 
     """
-    state = agent.env.reset()
+    state = T.from_numpy(agent.env.reset()).to(agent.device).float()
+    state = rearrange(state, 'h w c -> 1 c h w')
     rewards = []
     done = False
     lives = agent.env.unwrapped.ale.lives()
 
     while not (lives == 0 and done):
-        state = T.tensor(state, dtype=T.float, device=agent.device)
-        state = rearrange(state, 'h w c -> 1 c h w')
         action, log_prob, aux_val, log_dist = agent.get_action(state)
 
         if pretrain:
             state = state.cpu()
 
         next_state, reward, done, _ = agent.env.step(action)
+        next_state = T.from_numpy(next_state).to(agent.device).float()
+        next_state = rearrange(next_state, 'h w c -> 1 c h w')
         rewards.append(reward)
 
         total_steps_done += 1
