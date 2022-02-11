@@ -27,9 +27,9 @@ if __name__ == '__main__':
               'temperature': 0.1,
               'frames_to_skip': 4,
               'stacked_frames': 4,
-              'is_pretrain': True,
+              'is_pretrain': False,
               'steps_before_repr_learning': 1600,  # Paper value
-              'prefix': 'PRETRAIN_GRADNORMS_ENTSCALE'
+              'prefix': 'ATARI_ONLINE'
               }
 
     if config['is_pretrain']:
