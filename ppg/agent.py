@@ -1,7 +1,7 @@
 import torch as T
 
 if T.cuda.is_available():
-    import apex.optimizers.FusedAdam as Adam
+    from apex.optimizers import FusedAdam as Adam
 else:
     from torch.optim import Adam
 
@@ -54,6 +54,7 @@ class Agent(T.nn.Module):
         self.reward_function = ParticleReward()
         self.trajectory = Trajectory()
         self.replay_buffer = deque(maxlen=config['replay_buffer_size'])
+        # self.replay_buffer = T.zeros(config['replay_buffer_size'], )
 
         self.config = config
         self.entropy_coeff = config['entropy_coeff']
