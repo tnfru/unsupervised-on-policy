@@ -29,6 +29,7 @@ if __name__ == '__main__':
               'stacked_frames': 4,
               'is_pretrain': False,
               'steps_before_repr_learning': 1600,  # Paper value
+              'replay_buffer_size': 10000,
               'prefix': 'ATARI_ONLINE'
               }
 
@@ -36,7 +37,6 @@ if __name__ == '__main__':
         config.update({
             'batch_size': 512,
             'target_batch_size': 512,
-            'replay_buffer_size': 10000
         })
 
     config.update({
