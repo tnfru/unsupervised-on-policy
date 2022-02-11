@@ -51,32 +51,42 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
             log_steps_done(agent, total_steps_done)
             agent.log_metrics()
 
-    episode_length = len(rewards)
+        if total_steps_done % agent.config['rollout_length'] == 0:
+            if pretrain:
+                state_dset = StateData(agent.trajectory.states[steps_before:])
+                state_dset.fix_datatypes()
+                particle_rewards = calc_pretrain_rewards(agent,
+                                                         state_dset).tolist()
+                agent.trajectory.append_rewards(particle_rewards)
+                if agent.use_wandb:
+                    log_particle_reward(agent, particle_rewards)
+                    log_running_estimates(agent)
 
-    if pretrain:
-        state_dset = StateData(agent.trajectory.states[steps_before:])
-        state_dset.fix_datatypes()
-        particle_rewards = calc_pretrain_rewards(agent, state_dset).tolist()
-        agent.trajectory.append_rewards(particle_rewards)
+            else:
+                agent.trajectory.append_rewards(rewards)
 
-        if agent.use_wandb:
-            log_particle_reward(agent, particle_rewards,
-                                agent.reward_function.mean)
-            log_running_estimates(agent, agent.reward_function.mean,
-                                  agent.reward_function.var)
-
-    else:
-        agent.trajectory.append_rewards(rewards)
+            online_training(agent, total_steps_done, pretrain)
 
     agent.trajectory.calc_advantages(agent.config)
 
     if agent.use_wandb:
         log_rewards(agent, rewards)
-        log_episode_length(agent, episode_length)
+        log_episode_length(agent, len(rewards))
         log_steps_done(agent, total_steps_done)
         agent.log_metrics()
 
     return total_steps_done
+
+
+def online_training(agent, total_steps_done, pretrain):
+    agent.trajectory.data_to_tensors()
+    if agent.use_wandb:
+        log_ppo_env_steps(agent, total_steps_done)
+
+    agent.learn()
+
+    agent.forget()
+    agent.save_model()
 
 
 def run_timesteps(agent: T.nn.Module, num_timesteps: int, is_pretrain: bool):
@@ -93,13 +103,3 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, is_pretrain: bool):
 
     while steps_done < num_timesteps:
         steps_done = run_episode(agent, is_pretrain, steps_done)
-
-        if len(agent.trajectory) >= agent.config['rollout_length']:
-            agent.trajectory.data_to_tensors()
-            if agent.use_wandb:
-                log_ppo_env_steps(agent, steps_done)
-
-            agent.learn()
-
-            agent.forget()
-            agent.save_model()

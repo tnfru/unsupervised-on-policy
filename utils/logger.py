@@ -71,7 +71,8 @@ def log_nan_aux():
     wandb.log({'nan during aux': 1})
 
 
-def log_particle_reward(agent, rewards, mean):
+def log_particle_reward(agent, rewards):
+    mean = agent.reward_function.mean
     agent.metrics.update({
         'particle reward sum': np.sum(rewards),
         'particle reward mean': np.mean(rewards),
@@ -80,10 +81,10 @@ def log_particle_reward(agent, rewards, mean):
     })
 
 
-def log_running_estimates(agent, mean, var):
+def log_running_estimates(agent):
     agent.metrics.update({
-        'running mean': mean,
-        'running var': var
+        'running mean': agent.reward_function.mean,
+        'running var': agent.reward_function.var
     })
 
 
