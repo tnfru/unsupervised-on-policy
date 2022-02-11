@@ -58,10 +58,10 @@ class Trajectory(T.utils.data.Dataset):
             config['discount_factor'],
             config['gae_lambda']
         )
-        expected_returns = T.tensor(self.state_vals, dtype=T.float) + advantages
+        expected_returns = self.state_vals + advantages
         advantages = normalize(advantages)
 
-        aux_advatages = calculate_advantages(
+        aux_advantages = calculate_advantages(
             self.rewards,
             self.aux_state_values,
             self.dones,
@@ -70,7 +70,7 @@ class Trajectory(T.utils.data.Dataset):
         )
 
         aux_returns = T.tensor(self.aux_state_values,
-                               dtype=T.float) + aux_advatages
+                               dtype=T.float) + aux_advantages
 
         self.expected_returns.extend(expected_returns)
         self.advantages.extend(advantages)

@@ -59,7 +59,7 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
             with T.no_grad():
                 states = T.cat(agent.trajectory.states).to(agent.device)
                 agent.trajectory.state_vals = agent.critic(
-                    states).detach().cpu()
+                    states).squeeze().detach().cpu()
 
             if pretrain:
                 state_dset = T.cat(agent.trajectory.next_states)
