@@ -27,9 +27,9 @@ def do_accumulated_gradient_step(network: T.nn.Module,
     is_last_batch = batch_idx == num_batches - 1
 
     if batches_until_step == 0 or is_last_batch:
-        if config['grad_norm'] is not None:
+        if config['grad_norm_ppg'] is not None:
             T.nn.utils.clip_grad_norm_(network.parameters(), config[
-                'grad_norm'])
+                'grad_norm_ppg'])
         optimizer.step()
         clear_grad(network)
 
