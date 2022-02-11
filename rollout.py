@@ -57,8 +57,9 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
 
         if len(agent.trajectory) == agent.config['rollout_length']:
             with T.no_grad():
-                agent.trajectory.state_vals = agent.critic(
-                    T.cat(agent.trajectory.states))
+                states = T.cat(agent.trajectory.states).to(agent.device)
+                agent.trajectory.state_vals = agent.critic(states)
+
             if pretrain:
                 state_dset = T.cat(agent.trajectory.next_states)
                 particle_rewards = calc_pretrain_rewards(agent,
