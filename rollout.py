@@ -53,7 +53,7 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
 
         if total_steps_done % agent.config['rollout_length'] == 0:
             if pretrain:
-                state_dset = StateData(agent.trajectory.states[steps_before:])
+                state_dset = StateData(agent.trajectory.states)
                 state_dset.fix_datatypes()
                 particle_rewards = calc_pretrain_rewards(agent,
                                                          state_dset).tolist()
