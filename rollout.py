@@ -41,6 +41,8 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
         agent.replay_buffer[idx] = state.squeeze()
         agent.trajectory.append_step(state, state_val, action, done,
                                      log_prob, aux_val, log_dist)
+        if not pretrain:
+            agent.trajectory.append_reward(reward)
 
         state = next_state
         lives = agent.env.unwrapped.ale.lives()
@@ -59,20 +61,12 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
                 state_dset.fix_datatypes()
                 particle_rewards = calc_pretrain_rewards(agent,
                                                          state_dset).tolist()
-                agent.trajectory.append_rewards(particle_rewards)
+                agent.trajectory.extend_rewards(particle_rewards)
                 log_particle_reward(agent, particle_rewards)
                 log_running_estimates(agent)
 
-            else:
-                reward_idx = -agent.config['rollout_length']
-                agent.trajectory.append_rewards(rewards[reward_idx:])
-
             log_steps_done(agent, total_steps_done)
             online_training(agent, total_steps_done)
-
-    if not pretrain and not is_training_step:
-        reward_idx = -(len(rewards) % agent.config['rollout_length'])
-        agent.trajectory.append_rewards(rewards[reward_idx:])
 
     log_rewards(agent, rewards)
     log_episode_length(agent, len(rewards))

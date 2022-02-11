@@ -32,7 +32,10 @@ class Trajectory(T.utils.data.Dataset):
         self.state_vals.append(state_val)
         self.log_dists.append(log_dist)
 
-    def append_rewards(self, rewards):
+    def append_reward(self, reward):
+        self.rewards.append(reward)
+
+    def extend_rewards(self, rewards):
         self.rewards.extend(rewards)
 
     def data_to_tensors(self):
