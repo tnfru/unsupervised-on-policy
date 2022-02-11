@@ -54,7 +54,7 @@ class Agent(T.nn.Module):
         self.data_aug = DataAugment(config)
         self.reward_function = ParticleReward()
         self.trajectory = Trajectory()
-        if self.config['is_pretrain']:
+        if config['is_pretrain']:
             self.replay_buffer = T.zeros(config['replay_buffer_size'], config[
                 'stacked_frames'], config['height'], config['width'])
 
