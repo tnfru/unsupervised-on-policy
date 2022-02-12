@@ -28,11 +28,11 @@ if __name__ == '__main__':
               'temperature': 0.1,
               'frames_to_skip': 4,
               'stacked_frames': 4,
-              'is_pretrain': False,
+              'is_pretrain': True,
               'steps_before_repr_learning': 1600,  # Paper value
               'replay_buffer_size': 10000,
               'num_envs': 16,  # Parallel Envs
-              'prefix': 'ATARI'
+              'prefix': 'PRETRAIN'
               }
 
     if config['is_pretrain']:
