@@ -1,4 +1,5 @@
 import torch as T
+import numpy as np
 from einops import rearrange
 
 from pretrain.reward import calc_pretrain_rewards
@@ -29,7 +30,7 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
 
     while total_steps_done < num_timesteps:
         action, log_prob, aux_val, log_dist = agent.get_action(state)
-        next_state, reward, done, _ = agent.env.step(action)
+        next_state, reward, done, info = agent.env.step(action)
         next_state = T.from_numpy(next_state).to(agent.device).float()
         next_state = rearrange(next_state, 'envs h w c -> envs c h w')
 
@@ -55,9 +56,20 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
                 calc_pretrain_rewards(agent)
 
             online_training(agent, total_steps_done)
+
         idx = get_idx(agent, total_steps_done)
-        agent.trajectory.append_step(state, action, next_state.cpu(), done,
-                                     log_prob, aux_val, log_dist, idx)
+        if done.any():
+            terminal_state = next_state.cpu().copy()
+            for i in range(num_envs):
+                if done[i]:
+                    terminal_state[i] = T.from_numpy(
+                        info[i]['terminal_observation']).float()
+
+            agent.trajectory.append_step(state, action, terminal_state, done,
+                                         log_prob, aux_val, log_dist, idx)
+        else:
+            agent.trajectory.append_step(state, action, next_state.cpu(), done,
+                                         log_prob, aux_val, log_dist, idx)
         if not pretrain:
             agent.trajectory.rewards[idx] = T.from_numpy(reward).float()
         state = next_state
