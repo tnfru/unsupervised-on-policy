@@ -26,13 +26,12 @@ except ModuleNotFoundError:
 
 
 class Agent(T.nn.Module):
-    def __init__(self, env: gym.envs, action_dim: int, config: dict, load=False,
+    def __init__(self, env: gym.envs, config: dict, load=False,
                  load_new_config=False):
         """
         Agent class for PPG + APT
         Args:
             env: gym environment to interact with
-            action_dim: number of available actions
             config: configuration data
             load: load from previous run
             load_new_config: load a new config file
@@ -41,7 +40,8 @@ class Agent(T.nn.Module):
         self.env = env
         self.metrics = {}
 
-        self.actor = PPG_DQN_ARCH(action_dim, config['stacked_frames'])
+        self.actor = PPG_DQN_ARCH(config['action_dim'],
+                                  config['stacked_frames'])
         self.actor_opt = Adam(self.actor.parameters(),
                               lr=config['actor_lr'])
         self.critic = CriticNet(config)
@@ -53,7 +53,7 @@ class Agent(T.nn.Module):
         self.contrast_loss = ContrastiveLoss(config)
         self.data_aug = DataAugment(config)
         self.reward_function = ParticleReward()
-        self.trajectory = Trajectory()
+        self.trajectory = Trajectory(config)
         if config['is_pretrain']:
             self.replay_buffer = T.zeros(config['replay_buffer_size'], config[
                 'stacked_frames'], config['height'], config['width'])
@@ -96,10 +96,10 @@ class Agent(T.nn.Module):
 
         action_dist = Categorical(logits=action_probs)
         action = action_dist.sample()
-        log_prob = action_dist.log_prob(action).item()
-        log_dist = action_dist.probs.log().cpu().detach()
+        log_prob = action_dist.log_prob(action).squeeze()
+        log_dist = action_dist.probs.log()
 
-        return action.item(), log_prob, aux_value.item(), log_dist
+        return action.squeeze(), log_prob, aux_value.squeeze(), log_dist
 
     def learn(self):
         """
@@ -139,7 +139,7 @@ class Agent(T.nn.Module):
 
     def forget(self):
         """ Removes the collected data after training"""
-        self.trajectory = Trajectory()
+        self.trajectory = Trajectory(self.config)
 
     def save_model(self):
         os.makedirs(self.path, exist_ok=True)

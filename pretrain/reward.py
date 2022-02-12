@@ -1,5 +1,7 @@
 import torch as T
 
+from utils.logger import log_particle_reward, log_running_estimates
+
 
 class ParticleReward(T.nn.Module):
     def __init__(self, top_k=5):
@@ -45,6 +47,11 @@ class ParticleReward(T.nn.Module):
             top_k_rewards /= self.mean
 
         top_k_rewards = top_k_rewards.mean(dim=1)
+
+        if not T.isfinite(top_k_rewards).all():
+            print('kNN is NaN')
+            top_k_rewards[top_k_rewards.isnan()] = 0  # Vectorized Stability
+
         particle_rewards = T.log(self.c + top_k_rewards)
 
         return particle_rewards
@@ -79,20 +86,21 @@ class ParticleReward(T.nn.Module):
 
 
 @T.no_grad()
-def calc_pretrain_rewards(agent: T.nn.Module, state_set):
+def calc_pretrain_rewards(agent: T.nn.Module):
     """
 
     Args:
         agent: agent whose reward function will be used
-        state_set: dataset of states to calculate rewards for
 
     Returns: rewards for all given states
 
     """
 
+    state_set = agent.trajectory.next_states.to(agent.device)
     representations = agent.contrast_net(state_set)
-    rewards = agent.reward_function.calculate_reward(representations)
+    particle_rewards = agent.reward_function.calculate_reward(representations)
 
-    rewards = rewards.cpu()
+    agent.trajectory.rewards = particle_rewards.cpu()
 
-    return rewards
+    log_particle_reward(agent, particle_rewards)
+    log_running_estimates(agent)

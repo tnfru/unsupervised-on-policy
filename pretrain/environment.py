@@ -2,7 +2,8 @@ import gym
 import torch as T
 import numpy as np
 import random
-from supersuit import frame_stack_v1, resize_v0, clip_reward_v0
+from supersuit import frame_stack_v1, resize_v0, clip_reward_v0, \
+    stable_baselines3_vec_env_v0
 from stable_baselines3.common.atari_wrappers import EpisodicLifeEnv
 
 
@@ -32,6 +33,9 @@ def create_env(config: dict, name='MsPacman', render=None):
     env = frame_stack_v1(env, config['stacked_frames'])
 
     env = EpisodicLifeEnv(env)
+
+    env = stable_baselines3_vec_env_v0(env, config['num_envs'],
+                                       multiprocessing=True)
 
     return env
 

@@ -23,6 +23,7 @@ if __name__ == '__main__':
               'discount_factor': 0.99,
               'height': 84,
               'width': 84,
+              'action_dim': 18,
               'contrast_lr': 1e-3,
               'temperature': 0.1,
               'frames_to_skip': 4,
@@ -30,7 +31,8 @@ if __name__ == '__main__':
               'is_pretrain': True,
               'steps_before_repr_learning': 1600,  # Paper value
               'replay_buffer_size': 10000,
-              'prefix': 'PRE_PERF'
+              'num_envs': 4,  # Parallel Envs
+              'prefix': 'PRE_VECTORIZED_ENVS'
               }
 
     if config['is_pretrain']:
@@ -45,11 +47,11 @@ if __name__ == '__main__':
 
     SEED = 1337
     NUM_TIMESTEPS = 250_000_000
-    act_dim = 18
 
     environment.seed_everything(SEED)
     env = environment.create_env(config)
-    agent = Agent(env, action_dim=act_dim, config=config, load=False,
+    agent = Agent(env, config=config,
+                  load=False,
                   load_new_config=False)
 
     run_timesteps(agent, NUM_TIMESTEPS, is_pretrain=config['is_pretrain'])

@@ -4,7 +4,6 @@ from einops import rearrange
 from pretrain.reward import calc_pretrain_rewards
 from utils.logger import log_episode_length, log_particle_reward, \
     log_rewards, log_steps_done, log_ppo_env_steps
-from utils.logger import log_running_estimates
 from pretrain.contrastive_training import train_contrastive_batch
 
 
@@ -20,54 +19,50 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
     Returns: new number of steps done
 
     """
+    num_envs = agent.config['num_envs']
     state = T.from_numpy(agent.env.reset()).to(agent.device).float()
-    state = rearrange(state, 'h w c -> 1 c h w')
+    state = rearrange(state, 'envs h w c -> envs c h w')
     rewards = []
     done = False
-    lives = agent.env.unwrapped.ale.lives()
 
-    while not (lives == 0 and done):
+    while True:
         action, log_prob, aux_val, log_dist = agent.get_action(state)
         next_state, reward, done, _ = agent.env.step(action)
         next_state = T.from_numpy(next_state).to(agent.device).float()
-        next_state = rearrange(next_state, 'h w c -> 1 c h w')
+        next_state = rearrange(next_state, 'envs h w c -> envs c h w')
 
         rewards.append(reward)
-        total_steps_done += 1
 
         if pretrain:
             state = state.cpu()
-            idx = total_steps_done % agent.config['replay_buffer_size']
-            agent.replay_buffer[idx] = state.squeeze()
+            idx = get_idx(agent, total_steps_done, replay_buffer=True)
+            agent.replay_buffer[idx] = state
         else:
             agent.trajectory.append_reward(reward)
 
-        agent.trajectory.append_step(state, action, next_state, done,
-                                     log_prob, aux_val, log_dist)
-        state = next_state
-        lives = agent.env.unwrapped.ale.lives()
-
         if pretrain and total_steps_done >= agent.config[
             'steps_before_repr_learning']:
-            train_contrastive_batch(agent)
-            log_steps_done(agent, total_steps_done)
-            agent.log_metrics()
+            train_contrastive_batch(agent, total_steps_done)
 
-        if len(agent.trajectory) == agent.config['rollout_length']:
+        steps_until_train = agent.config['rollout_length'] / num_envs
+        if (total_steps_done + 1) % steps_until_train == 0:
             with T.no_grad():
-                states = T.cat(agent.trajectory.states).to(agent.device)
+                states = agent.trajectory.states.to(agent.device)
                 agent.trajectory.state_vals = agent.critic(
                     states).squeeze().detach().cpu()
 
             if pretrain:
-                state_dset = T.cat(agent.trajectory.next_states).to(
-                    agent.device)
-                particle_rewards = calc_pretrain_rewards(agent, state_dset)
-                agent.trajectory.extend_rewards(particle_rewards)
-                log_particle_reward(agent, particle_rewards)
-                log_running_estimates(agent)
+                calc_pretrain_rewards(agent)
 
             online_training(agent, total_steps_done)
+            print('trained')
+        idx = get_idx(agent, total_steps_done)
+        if (idx > 511).any():
+            print('idx error')
+        agent.trajectory.append_step(state, action, next_state, done,
+                                     log_prob, aux_val, log_dist, idx)
+        state = next_state
+        total_steps_done += 1
 
     log_rewards(agent, rewards)
     log_episode_length(agent, len(rewards))
@@ -77,9 +72,20 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
     return total_steps_done
 
 
+def get_idx(agent, total_steps_done, replay_buffer=False):
+    num_envs = agent.config['num_envs']
+    size = agent.config['replay_buffer_size'] if replay_buffer else \
+        agent.config['rollout_length']
+    idx = total_steps_done % (size / num_envs)
+    idx *= num_envs
+    idx = T.arange(idx, idx + num_envs).long()
+
+    return idx
+
+
 def online_training(agent, total_steps_done):
     agent.trajectory.calc_advantages(agent.config)
-    agent.trajectory.data_to_tensors()
+    # agent.trajectory.data_to_tensors()
     log_ppo_env_steps(agent, total_steps_done)
     log_steps_done(agent, total_steps_done)
 
