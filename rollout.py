@@ -37,15 +37,14 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
         total_steps_done += 1
 
         if pretrain:
-            state = state.cpu()
-        agent.trajectory.append_step(state, action, next_state, done,
-                                     log_prob, aux_val, log_dist)
-        if pretrain:
+            # state = state.cpu()
             idx = total_steps_done % agent.config['replay_buffer_size']
             agent.replay_buffer[idx] = state.squeeze()
         else:
             agent.trajectory.append_reward(reward)
 
+        agent.trajectory.append_step(state, action, next_state, done,
+                                     log_prob, aux_val, log_dist)
         state = next_state
         lives = agent.env.unwrapped.ale.lives()
 
