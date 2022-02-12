@@ -62,7 +62,8 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
                     states).squeeze().detach().cpu()
 
             if pretrain:
-                state_dset = T.cat(agent.trajectory.next_states)
+                state_dset = T.cat(agent.trajectory.next_states).to(
+                    agent.device)
                 particle_rewards = calc_pretrain_rewards(agent,
                                                          state_dset).tolist()
                 agent.trajectory.extend_rewards(particle_rewards)

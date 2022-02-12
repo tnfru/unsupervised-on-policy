@@ -1,7 +1,4 @@
 import torch as T
-from torch.utils.data import DataLoader
-
-from pretrain.state_data import StateData
 
 
 class ParticleReward(T.nn.Module):
@@ -93,15 +90,9 @@ def calc_pretrain_rewards(agent: T.nn.Module, state_set):
 
     """
 
-    all_rewards = []
-
-    state_set = state_set.to(agent.device)
     representations = agent.contrast_net(state_set)
     rewards = agent.reward_function.calculate_reward(representations)
 
     rewards = rewards.cpu()
-    all_rewards.append(rewards)
 
-    all_rewards = T.cat(all_rewards)
-
-    return all_rewards
+    return rewards
