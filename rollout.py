@@ -59,7 +59,7 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
         agent.trajectory.append_step(state, action, next_state.cpu(), done,
                                      log_prob, aux_val, log_dist, idx)
         if not pretrain:
-            agent.trajectory.rewards[idx] = reward
+            agent.trajectory.rewards[idx] = T.from_numpy(reward)
         state = next_state
         total_steps_done += 1
 
