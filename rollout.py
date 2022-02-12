@@ -58,7 +58,7 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
 
             online_training(agent, total_steps_done)
         idx = get_idx(agent, total_steps_done)
-        agent.trajectory.append_step(state, action, next_state, done,
+        agent.trajectory.append_step(state, action, next_state.cpu(), done,
                                      log_prob, aux_val, log_dist, idx)
         state = next_state
         total_steps_done += 1
