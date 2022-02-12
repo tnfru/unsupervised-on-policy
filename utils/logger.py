@@ -73,8 +73,9 @@ def log_rewards(agent, rewards):
 
 
 def log_steps_done(agent, steps):
+    total_steps = steps * agent.config['num_envs']
     if agent.use_wandb:
-        agent.metrics.update({'million env steps': steps / 1e6})
+        agent.metrics.update({'million env steps': total_steps / 1e6})
 
 
 def log_nan_aux(agent):
