@@ -43,7 +43,7 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
             agent.trajectory.append_reward(reward)
 
         if pretrain and total_steps_done >= agent.config[
-            'steps_before_repr_learning']:
+            'steps_before_repr_learning'] / num_envs:
             train_contrastive_batch(agent, total_steps_done)
 
         steps_until_train = agent.config['rollout_length'] / num_envs
