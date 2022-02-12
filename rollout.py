@@ -58,7 +58,7 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
 
         idx = get_idx(agent, total_steps_done)
         if done.any():
-            log_episode(agent, rewards, total_steps_done, done)
+            log_episode(agent, rewards, total_steps_done, done, info)
             terminal_state = fetch_terminal_state(next_state, num_envs, done,
                                                   info)
 
@@ -75,12 +75,14 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
     return total_steps_done
 
 
-def log_episode(agent, rewards, total_steps_done, done):
-    log_rewards(agent, rewards[done])
-    rewards[done] = 0
-    log_episode_length(agent, len(rewards))
-    log_steps_done(agent, total_steps_done)
-    agent.log_metrics()
+def log_episode(agent, rewards, total_steps_done, done, info):
+    for i in range(agent.config['num_envs']):
+        if done[i] and info[i]['lives'] == 1:
+            log_rewards(agent, rewards[done])
+            rewards[done] = 0
+            log_episode_length(agent, len(rewards))
+            log_steps_done(agent, total_steps_done)
+            agent.log_metrics()
 
 
 def fetch_terminal_state(next_state, num_envs, done, info):
@@ -105,7 +107,6 @@ def get_idx(agent, total_steps_done, replay_buffer=False):
 
 def online_training(agent, total_steps_done):
     agent.trajectory.calc_advantages(agent.config)
-    # agent.trajectory.data_to_tensors()
     log_ppo_env_steps(agent, total_steps_done)
     log_steps_done(agent, total_steps_done)
 
