@@ -21,10 +21,9 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
 
     """
     total_steps_done = 0
-    agent.forget()
-    rewards = []
-
     num_envs = agent.config['num_envs']
+    rewards = np.zeros(num_envs).astype(float)
+
     state = T.from_numpy(agent.env.reset()).to(agent.device).float()
     state = rearrange(state, 'envs h w c -> envs c h w')
 
@@ -34,7 +33,7 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
         next_state = T.from_numpy(next_state).to(agent.device).float()
         next_state = rearrange(next_state, 'envs h w c -> envs c h w')
 
-        rewards.append(reward)
+        rewards = rewards + reward
         state = state.cpu()
 
         if pretrain:
@@ -59,11 +58,9 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
 
         idx = get_idx(agent, total_steps_done)
         if done.any():
-            terminal_state = next_state.cpu().copy()
-            for i in range(num_envs):
-                if done[i]:
-                    terminal_state[i] = T.from_numpy(
-                        info[i]['terminal_observation']).float()
+            log_episode(agent, rewards, total_steps_done, done)
+            terminal_state = fetch_terminal_state(next_state, num_envs, done,
+                                                  info)
 
             agent.trajectory.append_step(state, action, terminal_state, done,
                                          log_prob, aux_val, log_dist, idx)
@@ -75,12 +72,23 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
         state = next_state
         total_steps_done += 1
 
-    log_rewards(agent, rewards)  # TODO FIX LOGG
+    return total_steps_done
+
+
+def log_episode(agent, rewards, total_steps_done, done):
+    log_rewards(agent, rewards[done])
     log_episode_length(agent, len(rewards))
     log_steps_done(agent, total_steps_done)
     agent.log_metrics()
 
-    return total_steps_done
+
+def fetch_terminal_state(next_state, num_envs, done, info):
+    terminal_state = next_state.cpu().clone()
+    for i in range(num_envs):
+        if done[i]:
+            term = T.from_numpy(info[i]['terminal_observation']).float()
+            terminal_state[i] = rearrange(term, 'h w c -> c h w')
+    return terminal_state
 
 
 def get_idx(agent, total_steps_done, replay_buffer=False):

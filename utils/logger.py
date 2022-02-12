@@ -69,7 +69,7 @@ def log_contrast_loss_epoch(agent, loss):
 
 def log_rewards(agent, rewards):
     if agent.use_wandb:
-        agent.metrics.update({'reward': np.sum(rewards)})
+        agent.metrics.update({'reward': np.mean(rewards)})
 
 
 def log_steps_done(agent, steps):
