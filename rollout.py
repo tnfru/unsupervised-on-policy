@@ -77,7 +77,7 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
 
 def log_episode(agent, rewards, total_steps_done, done, info):
     for i in range(agent.config['num_envs']):
-        if done[i] and info[i]['lives'] == 1:
+        if done[i] and info[i]['lives'] == 0:
             log_rewards(agent, rewards[done])
             rewards[done] = 0
             log_episode_length(agent, len(rewards))
