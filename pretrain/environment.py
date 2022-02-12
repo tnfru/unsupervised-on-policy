@@ -34,7 +34,7 @@ def create_env(config: dict, name='MsPacman', render=None):
     env = frame_stack_v1(env, config['stacked_frames'])
 
     env = EpisodicLifeEnv(env)
-    env = NoopResetEnv(env, noop_max=50)
+    env = NoopResetEnv(env, noop_max=30)
 
     env = stable_baselines3_vec_env_v0(env, config['num_envs'],
                                        multiprocessing=True)
