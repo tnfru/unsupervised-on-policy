@@ -14,6 +14,7 @@ from pretrain.data_augmentation import DataAugment
 from pretrain.contrastive_learning import ContrastiveLearner, ContrastiveLoss
 from utils.network_utils import get_loader
 from utils.logger import init_logging, log_entropy_coeff
+from utils.rollout_utils import get_idx
 
 try:
     from apex.optimizers import FusedAdam as Adam
@@ -54,9 +55,6 @@ class Agent(T.nn.Module):
         self.data_aug = DataAugment(config)
         self.reward_function = ParticleReward()
         self.trajectory = Trajectory(config)
-        if config['is_pretrain']:
-            self.replay_buffer = T.zeros(config['replay_buffer_size'], config[
-                'stacked_frames'], config['height'], config['width'])
 
         self.config = config
         self.entropy_coeff = config['entropy_coeff']
@@ -64,6 +62,10 @@ class Agent(T.nn.Module):
         self.AUX_WARN_THRESHOLD = 100
         self.steps = 0
         self.path = './saved_models'
+
+        if config['is_pretrain']:
+            self.replay_buffer = T.zeros(config['replay_buffer_size'], config[
+                'stacked_frames'], config['height'], config['width'])
 
         self.device = T.device(
             'cuda' if T.cuda.is_available() else 'cpu')
@@ -156,3 +158,8 @@ class Agent(T.nn.Module):
         if self.use_wandb:
             wandb.log(self.metrics)
             self.metrics = {}
+
+    def append_to_replay_buffer(self, state, steps_done):
+        if self.config['is_pretrain']:
+            idx = get_idx(self, steps_done, replay_buffer=True)
+            self.replay_buffer[idx] = state
