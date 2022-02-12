@@ -92,19 +92,3 @@ def online_training(agent, total_steps_done):
 
     agent.forget()
     agent.save_model()
-
-
-def run_timesteps(agent: T.nn.Module, num_timesteps: int, is_pretrain: bool):
-    """
-    Runs given number of timesteps
-    Args:
-        agent: agent handling the interactions
-        num_timesteps: steps to train for
-        is_pretrain: if reward is given by environment or calculated in a self
-        supervised fashion
-    """
-    steps_done = 0
-    agent.forget()
-
-    while steps_done < num_timesteps:
-        steps_done = run_episode(agent, is_pretrain, steps_done)
