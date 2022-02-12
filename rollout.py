@@ -81,7 +81,7 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
 
 def online_training(agent, total_steps_done):
     agent.trajectory.calc_advantages(agent.config)
-    agent.trajectory.data_to_tensors()
+    # agent.trajectory.data_to_tensors()
     log_ppo_env_steps(agent, total_steps_done)
     log_steps_done(agent, total_steps_done)
 
