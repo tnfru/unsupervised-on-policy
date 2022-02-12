@@ -54,4 +54,4 @@ if __name__ == '__main__':
                   load=False,
                   load_new_config=False)
 
-    run_timesteps(agent, NUM_TIMESTEPS, is_pretrain=config['is_pretrain'])
+    run_timesteps(agent, NUM_TIMESTEPS, pretrain=config['is_pretrain'])

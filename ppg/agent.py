@@ -93,13 +93,14 @@ class Agent(T.nn.Module):
 
         """
         action_probs, aux_value = self.actor(state)
+        aux_value = aux_value.squeeze().cpu()
 
         action_dist = Categorical(logits=action_probs)
-        action = action_dist.sample()
-        log_prob = action_dist.log_prob(action).squeeze()
-        log_dist = action_dist.probs.log()
+        action = action_dist.sample().squeeze().cpu()
+        log_prob = action_dist.log_prob(action).squeeze().cpu()
+        log_dist = action_dist.probs.log().squeeze().cpu()
 
-        return action.squeeze(), log_prob, aux_value.squeeze(), log_dist
+        return action, log_prob, aux_value, log_dist
 
     def learn(self):
         """

@@ -7,25 +7,27 @@ from utils.logger import log_episode_length, log_particle_reward, \
 from pretrain.contrastive_training import train_contrastive_batch
 
 
-def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
+def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
     """
     Runs one episode in the set environment
     Args:
         agent: agent handling the episode
-        total_steps_done: current timestep
+        num_timesteps: steps to train for
         pretrain: if reward is given by environment or calculated in a self
         supervised fashion
 
     Returns: new number of steps done
 
     """
+    total_steps_done = 0
+    agent.forget()
+    rewards = []
+
     num_envs = agent.config['num_envs']
     state = T.from_numpy(agent.env.reset()).to(agent.device).float()
     state = rearrange(state, 'envs h w c -> envs c h w')
-    rewards = []
-    done = False
 
-    while True:
+    while total_steps_done < num_timesteps:
         action, log_prob, aux_val, log_dist = agent.get_action(state)
         next_state, reward, done, _ = agent.env.step(action)
         next_state = T.from_numpy(next_state).to(agent.device).float()
@@ -55,16 +57,13 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
                 calc_pretrain_rewards(agent)
 
             online_training(agent, total_steps_done)
-            print('trained')
         idx = get_idx(agent, total_steps_done)
-        if (idx > 511).any():
-            print('idx error')
         agent.trajectory.append_step(state, action, next_state, done,
                                      log_prob, aux_val, log_dist, idx)
         state = next_state
         total_steps_done += 1
 
-    log_rewards(agent, rewards)
+    log_rewards(agent, rewards)  # TODO FIX LOGG
     log_episode_length(agent, len(rewards))
     log_steps_done(agent, total_steps_done)
     agent.log_metrics()
