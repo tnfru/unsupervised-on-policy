@@ -5,35 +5,41 @@ from utils.network_utils import normalize
 
 
 class Trajectory(T.utils.data.Dataset):
-    def __init__(self):
+    def __init__(self, config):
+        max_len = config['rollout_length']
         self.states = []
-        self.actions = []
-        self.rewards = []
-        self.log_probs = []
-        self.expected_returns = []
-        self.dones = []
-        self.advantages = []
-        self.aux_state_values = []
-        self.log_dists = []
-        self.state_vals = []
-        self.aux_rets = []
+        self.states = T.zeros(max_len, config['stacked_frames'],
+                              config['height'], config['width'])
+        self.next_states = T.zeros(max_len, config['stacked_frames'],
+                                   config['height'], config['width'])
+        self.actions = T.zeros(max_len, dtype=T.long)
+        self.rewards = T.zeros(max_len)
+        self.log_probs = T.zeros(max_len)
+        self.expected_returns = T.zeros(max_len)
+        self.dones = T.zeros(max_len)
+        self.advantages = T.zeros(max_len)
+        self.aux_state_values = T.zeros(max_len)
+        self.log_dists = T.zeros(max_len, config['action_dim'])
+        self.state_vals = T.zeros(max_len)
+        self.aux_rets = T.zeros(max_len)
         self.is_aux_epoch = False
+        self.is_critic_epoch = False
 
     def __len__(self):
         return len(self.states)
 
-    def append_step(self, state, state_val, action, done,
-                    log_prob, aux_val, log_dist):
-        self.states.append(state)
-        self.actions.append(action)
-        self.dones.append(done)
-        self.log_probs.append(log_prob)
-        self.aux_state_values.append(aux_val)
-        self.state_vals.append(state_val)
-        self.log_dists.append(log_dist)
+    def append_step(self, state, action, next_state, done,
+                    log_prob, aux_val, log_dist, idx):
+        self.states[idx] = state
+        self.actions[idx] = action
+        self.next_states[idx] = next_state
+        self.dones[idx] = T.from_numpy(done).float()
+        self.log_probs[idx] = log_prob
+        self.aux_state_values[idx] = aux_val
+        self.log_dists[idx] = log_dist
 
-    def append_rewards(self, rewards):
-        self.rewards.extend(rewards)
+    def extend_state_vals(self, state_vals):
+        self.state_vals.extend(state_vals)
 
     def data_to_tensors(self):
         self.states = T.cat(self.states)
@@ -50,10 +56,10 @@ class Trajectory(T.utils.data.Dataset):
             config['discount_factor'],
             config['gae_lambda']
         )
-        expected_returns = T.tensor(self.state_vals, dtype=T.float) + advantages
+        expected_returns = self.state_vals + advantages
         advantages = normalize(advantages)
 
-        aux_advatages = calculate_advantages(
+        aux_advantages = calculate_advantages(
             self.rewards,
             self.aux_state_values,
             self.dones,
@@ -61,25 +67,23 @@ class Trajectory(T.utils.data.Dataset):
             config['gae_lambda']
         )
 
-        aux_returns = T.tensor(self.aux_state_values,
-                               dtype=T.float) + aux_advatages
+        aux_returns = self.aux_state_values + aux_advantages
 
-        self.expected_returns.extend(expected_returns)
-        self.advantages.extend(advantages)
-        self.aux_rets.extend(aux_returns)
+        self.expected_returns = expected_returns
+        self.advantages = advantages
+        self.aux_rets = aux_returns
 
     def __getitem__(self, index):
         state = self.states[index]
         expected_return = self.expected_returns[index]
         log_dist = self.log_dists[index].squeeze()
-        state_val = self.state_vals[index]
         advantage = self.advantages[index]
         # done = self.dones[index] not required by any loop
 
         if self.is_aux_epoch:
             aux_ret = self.aux_rets[index]
-            return state, expected_return, aux_ret, state_val, log_dist
+            return state, expected_return, aux_ret, log_dist
         else:
             action = self.actions[index]
             log_prob = self.log_probs[index]
-            return state, action, expected_return, state_val, advantage, log_prob
+            return state, action, expected_return, advantage, log_prob
