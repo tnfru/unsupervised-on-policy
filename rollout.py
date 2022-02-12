@@ -39,8 +39,6 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
             state = state.cpu()
             idx = get_idx(agent, total_steps_done, replay_buffer=True)
             agent.replay_buffer[idx] = state
-        else:
-            agent.trajectory.append_reward(reward)
 
         if pretrain and total_steps_done >= agent.config[
             'steps_before_repr_learning'] / num_envs:
@@ -60,6 +58,8 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
         idx = get_idx(agent, total_steps_done)
         agent.trajectory.append_step(state, action, next_state.cpu(), done,
                                      log_prob, aux_val, log_dist, idx)
+        if not pretrain:
+            agent.trajectory.rewards[idx] = reward
         state = next_state
         total_steps_done += 1
 
