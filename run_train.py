@@ -23,20 +23,22 @@ if __name__ == '__main__':
               'discount_factor': 0.99,
               'height': 84,
               'width': 84,
+              'action_dim': 18,
               'contrast_lr': 1e-3,
               'temperature': 0.1,
               'frames_to_skip': 4,
               'stacked_frames': 4,
               'is_pretrain': True,
               'steps_before_repr_learning': 1600,  # Paper value
-              'prefix': 'PRETRAIN_GRADNORMS_ENTSCALE'
+              'replay_buffer_size': 10000,
+              'num_envs': 16,  # Parallel Envs
+              'prefix': 'PRETRAIN'
               }
 
     if config['is_pretrain']:
         config.update({
             'batch_size': 512,
             'target_batch_size': 512,
-            'replay_buffer_size': 10000
         })
 
     config.update({
@@ -45,11 +47,9 @@ if __name__ == '__main__':
 
     SEED = 1337
     NUM_TIMESTEPS = 250_000_000
-    act_dim = 18
 
     environment.seed_everything(SEED)
     env = environment.create_env(config)
-    agent = Agent(env, action_dim=act_dim, config=config, load=False,
-                  load_new_config=False)
+    agent = Agent(env, config=config, load=False, load_new_config=False)
 
-    run_timesteps(agent, NUM_TIMESTEPS, is_pretrain=config['is_pretrain'])
+    run_timesteps(agent, NUM_TIMESTEPS, pretrain=config['is_pretrain'])

@@ -1,7 +1,6 @@
 import torch as T
-from torch.utils.data import DataLoader
 
-from pretrain.state_data import StateData
+from utils.logger import log_particle_reward, log_running_estimates
 
 
 class ParticleReward(T.nn.Module):
@@ -48,6 +47,11 @@ class ParticleReward(T.nn.Module):
             top_k_rewards /= self.mean
 
         top_k_rewards = top_k_rewards.mean(dim=1)
+
+        if not T.isfinite(top_k_rewards).all():
+            print('kNN is NaN')
+            top_k_rewards[top_k_rewards.isnan()] = 0  # Vectorized Stability
+
         particle_rewards = T.log(self.c + top_k_rewards)
 
         return particle_rewards
@@ -82,29 +86,21 @@ class ParticleReward(T.nn.Module):
 
 
 @T.no_grad()
-def calc_pretrain_rewards(agent: T.nn.Module, state_set: StateData):
+def calc_pretrain_rewards(agent: T.nn.Module):
     """
 
     Args:
         agent: agent whose reward function will be used
-        state_set: dataset of states to calculate rewards for
 
     Returns: rewards for all given states
 
     """
-    loader = DataLoader(state_set, batch_size=agent.config[
-        'batch_size'], shuffle=False, pin_memory=True, drop_last=False)
 
-    all_rewards = []
+    state_set = agent.trajectory.next_states.to(agent.device)
+    representations = agent.contrast_net(state_set)
+    particle_rewards = agent.reward_function.calculate_reward(representations)
 
-    for state_batch in loader:
-        state_batch = state_batch.to(agent.device)
-        representations = agent.contrast_net(state_batch)
-        rewards = agent.reward_function.calculate_reward(representations)
+    agent.trajectory.rewards = particle_rewards.cpu()
 
-        rewards = rewards.cpu()
-        all_rewards.append(rewards)
-
-    all_rewards = T.cat(all_rewards)
-
-    return all_rewards
+    log_particle_reward(agent, particle_rewards)
+    log_running_estimates(agent)

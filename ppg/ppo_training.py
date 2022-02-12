@@ -16,8 +16,8 @@ def train_ppo_epoch(agent: T.nn.Module, loader: T.utils.data.DataLoader):
     num_batches = len(loader)
 
     for batch_idx, rollout_data in enumerate(loader):
-        states, actions, expected_returns, state_values, advantages, \
-        log_probs = data_to_device(rollout_data, agent.device)
+        states, actions, expected_returns, advantages, log_probs = data_to_device(
+            rollout_data, agent.device)
 
         train_ppo_batch(agent, states, actions, log_probs, advantages,
                         batch_idx, num_batches)

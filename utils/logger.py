@@ -1,6 +1,7 @@
 import wandb
 import warnings
 import numpy as np
+import torch as T
 
 
 def init_logging(config, agent, prefix):
@@ -68,12 +69,13 @@ def log_contrast_loss_epoch(agent, loss):
 
 def log_rewards(agent, rewards):
     if agent.use_wandb:
-        agent.metrics.update({'reward': np.sum(rewards)})
+        agent.metrics.update({'reward': np.mean(rewards)})
 
 
 def log_steps_done(agent, steps):
+    total_steps = steps * agent.config['num_envs']
     if agent.use_wandb:
-        agent.metrics.update({'million env steps': steps / 1e6})
+        agent.metrics.update({'million env steps': total_steps / 1e6})
 
 
 def log_nan_aux(agent):
@@ -85,10 +87,10 @@ def log_particle_reward(agent, rewards):
     if agent.use_wandb:
         mean = agent.reward_function.mean
         agent.metrics.update({
-            'particle reward sum': np.sum(rewards),
-            'particle reward mean': np.mean(rewards),
-            'particle reward unnormalized': mean * np.mean(rewards),
-            'particle reward sum unnormalized': mean * np.sum(rewards)
+            'particle reward sum': T.sum(rewards),
+            'particle reward mean': T.mean(rewards),
+            'particle reward unnormalized': mean * T.mean(rewards),
+            'particle reward sum unnormalized': mean * T.sum(rewards)
         })
 
 
@@ -108,5 +110,6 @@ def log_entropy_coeff(agent):
 
 
 def log_ppo_env_steps(agent, steps):
+    total_steps = steps * agent.config['num_envs'] / 1e6
     if agent.use_wandb:
-        agent.metrics.update({'mil env steps': steps / 1e6})
+        agent.metrics.update({'mil env steps': total_steps})

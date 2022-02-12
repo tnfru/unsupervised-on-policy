@@ -1,10 +1,10 @@
 import torch as T
 
-from utils.logger import log_contrast_loss_epoch
+from utils.logger import log_contrast_loss_epoch, log_steps_done
 from utils.network_utils import do_gradient_step
 
 
-def train_contrastive_batch(agent):
+def train_contrastive_batch(agent, total_steps_done):
     """ Trains the encoder on the NT-Xent loss from SimCLR"""
     batch_size = agent.config['batch_size']
 
@@ -22,5 +22,6 @@ def train_contrastive_batch(agent):
 
     do_gradient_step(agent.contrast_net, agent.contrast_opt, loss, agent.config)
 
-    if agent.use_wandb:
-        log_contrast_loss_epoch(agent, loss.item())
+    log_contrast_loss_epoch(agent, loss.item())
+    log_steps_done(agent, total_steps_done)
+    agent.log_metrics()
