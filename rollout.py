@@ -2,7 +2,6 @@ import torch as T
 from einops import rearrange
 
 from pretrain.reward import calc_pretrain_rewards
-from pretrain.state_data import StateData
 from utils.logger import log_episode_length, log_particle_reward, \
     log_rewards, log_steps_done, log_ppo_env_steps
 from utils.logger import log_running_estimates
@@ -37,7 +36,7 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
         total_steps_done += 1
 
         if pretrain:
-            # state = state.cpu()
+            state = state.cpu()
             idx = total_steps_done % agent.config['replay_buffer_size']
             agent.replay_buffer[idx] = state.squeeze()
         else:
@@ -63,8 +62,7 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
             if pretrain:
                 state_dset = T.cat(agent.trajectory.next_states).to(
                     agent.device)
-                particle_rewards = calc_pretrain_rewards(agent,
-                                                         state_dset).tolist()
+                particle_rewards = calc_pretrain_rewards(agent, state_dset)
                 agent.trajectory.extend_rewards(particle_rewards)
                 log_particle_reward(agent, particle_rewards)
                 log_running_estimates(agent)
@@ -81,7 +79,7 @@ def run_episode(agent: T.nn.Module, pretrain: bool, total_steps_done: int):
 
 def online_training(agent, total_steps_done):
     agent.trajectory.calc_advantages(agent.config)
-    # agent.trajectory.data_to_tensors()
+    agent.trajectory.data_to_tensors()
     log_ppo_env_steps(agent, total_steps_done)
     log_steps_done(agent, total_steps_done)
 
