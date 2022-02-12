@@ -110,5 +110,6 @@ def log_entropy_coeff(agent):
 
 
 def log_ppo_env_steps(agent, steps):
+    total_steps = steps * agent.config['num_envs'] / 1e6
     if agent.use_wandb:
-        agent.metrics.update({'mil env steps': steps / 1e6})
+        agent.metrics.update({'mil env steps': total_steps})
