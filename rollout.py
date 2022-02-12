@@ -34,9 +34,9 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
         next_state = rearrange(next_state, 'envs h w c -> envs c h w')
 
         rewards.append(reward)
+        state = state.cpu()
 
         if pretrain:
-            state = state.cpu()
             idx = get_idx(agent, total_steps_done, replay_buffer=True)
             agent.replay_buffer[idx] = state
 
