@@ -3,7 +3,8 @@ import numpy as np
 from einops import rearrange
 
 from pretrain.reward import calc_pretrain_rewards
-from utils.logger import log_episode_length, log_rewards, log_steps_done, \
+from utils.logger import log_episode
+from utils.logger import log_steps_done, \
     log_ppo_env_steps
 from pretrain.contrastive_training import train_contrastive_batch
 from utils.rollout_utils import append_task_reward
@@ -28,6 +29,7 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
     total_steps_done = 0
     num_envs = agent.config['num_envs']
     rewards = np.zeros(num_envs).astype(float)
+    eps_lengths = np.zeros(num_envs).astype(int)
 
     state = T.from_numpy(agent.env.reset()).to(agent.device).float()
     state = rearrange(state, 'envs h w c -> envs c h w')
@@ -55,11 +57,12 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
             if pretrain:
                 calc_pretrain_rewards(agent)
 
-            online_training(agent, total_steps_done)
+            agent.learn(total_steps_done)
 
         idx = get_idx(agent, total_steps_done)
         if done.any():
-            log_episode(agent, rewards, total_steps_done, done, info)
+            log_episode(agent, rewards, eps_lengths, total_steps_done, done,
+                        info)
             terminal_state = fetch_terminal_state(next_state, num_envs, done,
                                                   info)
 
@@ -71,26 +74,6 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
         append_task_reward(agent, reward, idx)
         state = next_state
         total_steps_done += 1
+        eps_lengths = eps_lengths + 1
 
     return total_steps_done
-
-
-def log_episode(agent, rewards, total_steps_done, done, info):
-    for i in range(agent.config['num_envs']):
-        if done[i] and info[i]['lives'] == 0:
-            log_rewards(agent, rewards[done])
-            rewards[done] = 0
-            log_episode_length(agent, len(rewards))
-            log_steps_done(agent, total_steps_done)
-            agent.log_metrics()
-
-
-def online_training(agent, total_steps_done):
-    agent.trajectory.calc_advantages(agent.config)
-    log_ppo_env_steps(agent, total_steps_done)
-    log_steps_done(agent, total_steps_done)
-
-    agent.learn()
-
-    agent.forget()
-    agent.save_model()

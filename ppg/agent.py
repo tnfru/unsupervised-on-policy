@@ -13,7 +13,8 @@ from pretrain.reward import ParticleReward
 from pretrain.data_augmentation import DataAugment
 from pretrain.contrastive_learning import ContrastiveLearner, ContrastiveLoss
 from utils.network_utils import get_loader
-from utils.logger import init_logging, log_entropy_coeff
+from utils.logger import init_logging, log_entropy_coeff, log_ppo_env_steps, \
+    log_steps_done
 from utils.rollout_utils import get_idx
 
 try:
@@ -105,10 +106,12 @@ class Agent(T.nn.Module):
 
         return action, log_prob, aux_value, log_dist
 
-    def learn(self):
+    def learn(self, total_steps_done):
         """
         Trains the different networks on the collected trajectories
         """
+        self.trajectory.calc_advantages(self.config)
+
         self.ppo_training_phase()
         self.steps += self.config['train_iterations']
 
@@ -117,9 +120,10 @@ class Agent(T.nn.Module):
             self.steps = 0
 
         self.entropy_coeff *= self.config['entropy_decay']
+        self.log_training(total_steps_done)
 
-        log_entropy_coeff(self)
-        self.log_metrics()
+        self.forget()
+        self.save_model()
 
     def ppo_training_phase(self):
         """ Trains the actor network on the PPO Objective """
@@ -145,6 +149,11 @@ class Agent(T.nn.Module):
         """ Removes the collected data after training"""
         self.trajectory = Trajectory(self.config)
 
+    def append_to_replay_buffer(self, state, steps_done):
+        if self.config['is_pretrain']:
+            idx = get_idx(self, steps_done, replay_buffer=True)
+            self.replay_buffer[idx] = state
+
     def save_model(self):
         os.makedirs(self.path, exist_ok=True)
         PATH = self.path + '/agent_latest.pt'
@@ -154,12 +163,13 @@ class Agent(T.nn.Module):
         PATH = self.path + '/agent_latest.pt'
         self.load_state_dict(T.load(PATH))
 
+    def log_training(self, total_steps_done):
+        log_ppo_env_steps(self, total_steps_done)
+        log_steps_done(self, total_steps_done)
+        log_entropy_coeff(self)
+        self.log_metrics()
+
     def log_metrics(self):
         if self.use_wandb:
             wandb.log(self.metrics)
             self.metrics = {}
-
-    def append_to_replay_buffer(self, state, steps_done):
-        if self.config['is_pretrain']:
-            idx = get_idx(self, steps_done, replay_buffer=True)
-            self.replay_buffer[idx] = state

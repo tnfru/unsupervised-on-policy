@@ -53,7 +53,7 @@ def warn_about_aux_loss_scaling(aux_loss):
 def log_episode_length(agent, episode_length):
     if agent.use_wandb:
         agent.metrics.update({
-            'episode_length': episode_length
+            'episode_length': np.mean(episode_length)
         })
 
 
@@ -113,3 +113,13 @@ def log_ppo_env_steps(agent, steps):
     total_steps = steps * agent.config['num_envs'] / 1e6
     if agent.use_wandb:
         agent.metrics.update({'mil env steps': total_steps})
+
+
+def log_episode(agent, rewards, eps_length, total_steps_done, done, info):
+    for i in range(agent.config['num_envs']):
+        if done[i] and info[i]['lives'] == 0:
+            log_rewards(agent, rewards[done])
+            rewards[done] = 0
+            log_episode_length(agent, eps_length[done])
+            log_steps_done(agent, total_steps_done)
+            agent.log_metrics()
