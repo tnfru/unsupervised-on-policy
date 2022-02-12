@@ -96,8 +96,9 @@ class Agent(T.nn.Module):
         aux_value = aux_value.squeeze().cpu()
 
         action_dist = Categorical(logits=action_probs)
-        action = action_dist.sample().squeeze().cpu()
+        action = action_dist.sample()
         log_prob = action_dist.log_prob(action).squeeze().cpu()
+        action = action.squeeze().cpu()
         log_dist = action_dist.probs.log().squeeze().cpu()
 
         return action, log_prob, aux_value, log_dist
