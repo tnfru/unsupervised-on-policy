@@ -87,6 +87,10 @@ class PPG_DQN_ARCH(nn.Module):
             nn.Linear(256, 1)
         )
 
+        # see https://arxiv.org/abs/2006.05990 network architecture
+        self.action_head[0].weight = self.action_head[0].weight / 100
+        self.val_head[0].weight = self.action_head[0].weight / 100
+
         self.device = T.device(
             'cuda' if T.cuda.is_available() else 'cpu')
         self.to(self.device)
