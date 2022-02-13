@@ -31,7 +31,7 @@ if __name__ == '__main__':
               'is_pretrain': False,
               'steps_before_repr_learning': 1600,  # Paper value
               'replay_buffer_size': 10000,
-              'num_envs': 1,  # Parallel Envs
+              'num_envs': 2,  # Parallel Envs
               'prefix': 'Atari_single_env'
               }
 
