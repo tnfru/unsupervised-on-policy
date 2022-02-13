@@ -121,5 +121,6 @@ def log_episode(agent, rewards, eps_length, total_steps_done, done, info):
             log_rewards(agent, rewards[done])
             rewards[done] = 0
             log_episode_length(agent, eps_length[done])
+            eps_length[done] = 0
             log_steps_done(agent, total_steps_done)
             agent.log_metrics()
