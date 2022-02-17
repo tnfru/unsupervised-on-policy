@@ -20,10 +20,10 @@ def log_ppo(agent, entropy_loss, kl_div, kl_max):
             exceeded = 0
         else:
             exceeded = 1
-    agent.metrics.update({'entropy loss': entropy_loss,
-                          'entropy': -entropy_loss / agent.entropy_coeff,
-                          'kl div': kl_div.mean(),
-                          'kl_exceeded': exceeded})
+        agent.metrics.update({'entropy loss': entropy_loss,
+                              'entropy': -entropy_loss / agent.entropy_coeff,
+                              'kl div': kl_div.mean(),
+                              'kl_exceeded': exceeded})
 
 
 def log_aux(agent, aux_values, aux_loss, kl_div, kl_max):
