@@ -38,23 +38,13 @@ class Trajectory(T.utils.data.Dataset):
         self.aux_state_values[idx] = aux_val
         self.log_dists[idx] = log_dist
 
-    def extend_state_vals(self, state_vals):
-        self.state_vals.extend(state_vals)
-
-    def data_to_tensors(self):
-        self.states = T.cat(self.states)
-        self.actions = T.tensor(self.actions, dtype=T.long)
-        self.dones = T.tensor(self.dones, dtype=T.int)
-        self.log_probs = T.tensor(self.log_probs, dtype=T.float)
-        self.log_dists = T.stack(self.log_dists)
-
-    def calc_advantages(self, config):
+    def calc_advantages(self, config, last_state_vals):
         advantages = calculate_advantages(
             self.rewards,
             self.state_vals,
             self.dones,
-            config['discount_factor'],
-            config['gae_lambda']
+            last_state_vals,
+            config
         )
         expected_returns = self.state_vals + advantages
         advantages = normalize(advantages)
@@ -63,8 +53,8 @@ class Trajectory(T.utils.data.Dataset):
             self.rewards,
             self.aux_state_values,
             self.dones,
-            config['discount_factor'],
-            config['gae_lambda']
+            last_state_vals,
+            config
         )
 
         aux_returns = self.aux_state_values + aux_advantages

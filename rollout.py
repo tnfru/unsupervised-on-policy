@@ -3,9 +3,13 @@ import numpy as np
 from einops import rearrange
 
 from pretrain.reward import calc_pretrain_rewards
-from utils.logger import log_episode_length, log_particle_reward, \
-    log_rewards, log_steps_done, log_ppo_env_steps
+from utils.logger import log_episode
 from pretrain.contrastive_training import train_contrastive_batch
+from utils.rollout_utils import append_task_reward
+from utils.rollout_utils import fetch_terminal_state
+from utils.rollout_utils import get_idx
+from utils.rollout_utils import is_repr_learn_phase
+from utils.rollout_utils import is_training_step
 
 
 def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
@@ -23,6 +27,7 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
     total_steps_done = 0
     num_envs = agent.config['num_envs']
     rewards = np.zeros(num_envs).astype(float)
+    eps_lengths = np.zeros(num_envs).astype(int)
 
     state = T.from_numpy(agent.env.reset()).to(agent.device).float()
     state = rearrange(state, 'envs h w c -> envs c h w')
@@ -35,30 +40,27 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
 
         rewards = rewards + reward
         state = state.cpu()
+        agent.append_to_replay_buffer(state, total_steps_done)
 
-        if pretrain:
-            idx = get_idx(agent, total_steps_done, replay_buffer=True)
-            agent.replay_buffer[idx] = state
-
-        if pretrain and total_steps_done >= agent.config[
-            'steps_before_repr_learning'] / num_envs:
+        if is_repr_learn_phase(agent.config, total_steps_done):
             train_contrastive_batch(agent, total_steps_done)
 
-        steps_until_train = agent.config['rollout_length'] / num_envs
-        if (total_steps_done + 1) % steps_until_train == 0:
+        if is_training_step(agent.config, total_steps_done):
             with T.no_grad():
                 states = agent.trajectory.states.to(agent.device)
+
                 agent.trajectory.state_vals = agent.critic(
                     states).squeeze().detach().cpu()
 
             if pretrain:
                 calc_pretrain_rewards(agent)
 
-            online_training(agent, total_steps_done)
+            agent.learn(total_steps_done)
 
         idx = get_idx(agent, total_steps_done)
         if done.any():
-            log_episode(agent, rewards, total_steps_done, done, info)
+            log_episode(agent, rewards, eps_lengths, total_steps_done, done,
+                        info)
             terminal_state = fetch_terminal_state(next_state, num_envs, done,
                                                   info)
 
@@ -67,50 +69,9 @@ def run_timesteps(agent: T.nn.Module, num_timesteps: int, pretrain: bool):
         else:
             agent.trajectory.append_step(state, action, next_state.cpu(), done,
                                          log_prob, aux_val, log_dist, idx)
-        if not pretrain:
-            agent.trajectory.rewards[idx] = T.from_numpy(reward).float()
+        append_task_reward(agent, reward, idx)
         state = next_state
         total_steps_done += 1
+        eps_lengths = eps_lengths + 1
 
     return total_steps_done
-
-
-def log_episode(agent, rewards, total_steps_done, done, info):
-    for i in range(agent.config['num_envs']):
-        if done[i] and info[i]['lives'] == 0:
-            log_rewards(agent, rewards[done])
-            rewards[done] = 0
-            log_episode_length(agent, len(rewards))
-            log_steps_done(agent, total_steps_done)
-            agent.log_metrics()
-
-
-def fetch_terminal_state(next_state, num_envs, done, info):
-    terminal_state = next_state.cpu().clone()
-    for i in range(num_envs):
-        if done[i]:
-            term = T.from_numpy(info[i]['terminal_observation']).float()
-            terminal_state[i] = rearrange(term, 'h w c -> c h w')
-    return terminal_state
-
-
-def get_idx(agent, total_steps_done, replay_buffer=False):
-    num_envs = agent.config['num_envs']
-    size = agent.config['replay_buffer_size'] if replay_buffer else \
-        agent.config['rollout_length']
-    idx = total_steps_done % (size / num_envs)
-    idx *= num_envs
-    idx = T.arange(idx, idx + num_envs).long()
-
-    return idx
-
-
-def online_training(agent, total_steps_done):
-    agent.trajectory.calc_advantages(agent.config)
-    log_ppo_env_steps(agent, total_steps_done)
-    log_steps_done(agent, total_steps_done)
-
-    agent.learn()
-
-    agent.forget()
-    agent.save_model()
