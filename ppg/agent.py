@@ -110,7 +110,13 @@ class Agent(T.nn.Module):
         """
         Trains the different networks on the collected trajectories
         """
-        self.trajectory.calc_advantages(self.config)
+        with T.no_grad():
+            num_envs = self.config['num_envs']
+            final_states = self.trajectory.next_states[-num_envs:].to(
+                self.device)
+            last_state_vals = self.critic(final_states).squeeze()
+
+        self.trajectory.calc_advantages(self.config, last_state_vals)
 
         self.ppo_training_phase()
         self.steps += self.config['train_iterations']

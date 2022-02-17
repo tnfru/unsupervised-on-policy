@@ -4,8 +4,6 @@ from einops import rearrange
 
 from pretrain.reward import calc_pretrain_rewards
 from utils.logger import log_episode
-from utils.logger import log_steps_done, \
-    log_ppo_env_steps
 from pretrain.contrastive_training import train_contrastive_batch
 from utils.rollout_utils import append_task_reward
 from utils.rollout_utils import fetch_terminal_state
