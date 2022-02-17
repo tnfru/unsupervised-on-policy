@@ -5,10 +5,12 @@ import pretrain.environment as environment
 if __name__ == '__main__':
     config = {'policy_clip': 0.25,
               'kl_max': None,  # 0.05 used previously
+              'kl_max_aux': 0.01,  # stability
               'beta': 1,
               'val_coeff': 1e-2,
               'train_iterations': 1,
               'entropy_coeff': 0.01,
+              'entropy_min': 0.01,
               'entropy_decay': 0.999,
               'grad_norm': 10,
               'grad_norm_ppg': 0.5,
@@ -28,17 +30,17 @@ if __name__ == '__main__':
               'temperature': 0.1,
               'frames_to_skip': 4,
               'stacked_frames': 4,
-              'is_pretrain': True,
+              'is_pretrain': False,
               'steps_before_repr_learning': 1600,  # Paper value
               'replay_buffer_size': 10000,
               'num_envs': 16,  # Parallel Envs
-              'prefix': 'PRETRAIN'
+              'prefix': 'ATARI_WORKS'
               }
 
     if config['is_pretrain']:
         config.update({
             'batch_size': 512,
-            'target_batch_size': 512,
+            'target_batch_size': 512
         })
 
     config.update({

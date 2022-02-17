@@ -45,5 +45,4 @@ def train_critic_batch(agent, states: T.tensor, expected_returns: T.tensor,
     do_accumulated_gradient_step(agent.critic, agent.critic_opt, critic_loss,
                                  config, batch_idx, num_batches)
 
-    if agent.use_wandb:
-        log_critic(agent, critic_loss, state_values)
+    log_critic(agent, critic_loss, state_values)

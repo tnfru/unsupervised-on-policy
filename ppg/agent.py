@@ -13,7 +13,9 @@ from pretrain.reward import ParticleReward
 from pretrain.data_augmentation import DataAugment
 from pretrain.contrastive_learning import ContrastiveLearner, ContrastiveLoss
 from utils.network_utils import get_loader
-from utils.logger import init_logging, log_entropy_coeff
+from utils.logger import init_logging, log_entropy_coeff, log_ppo_env_steps, \
+    log_steps_done
+from utils.rollout_utils import get_idx
 
 try:
     from apex.optimizers import FusedAdam as Adam
@@ -54,9 +56,6 @@ class Agent(T.nn.Module):
         self.data_aug = DataAugment(config)
         self.reward_function = ParticleReward()
         self.trajectory = Trajectory(config)
-        if config['is_pretrain']:
-            self.replay_buffer = T.zeros(config['replay_buffer_size'], config[
-                'stacked_frames'], config['height'], config['width'])
 
         self.config = config
         self.entropy_coeff = config['entropy_coeff']
@@ -64,6 +63,10 @@ class Agent(T.nn.Module):
         self.AUX_WARN_THRESHOLD = 100
         self.steps = 0
         self.path = './saved_models'
+
+        if config['is_pretrain']:
+            self.replay_buffer = T.zeros(config['replay_buffer_size'], config[
+                'stacked_frames'], config['height'], config['width'])
 
         self.device = T.device(
             'cuda' if T.cuda.is_available() else 'cpu')
@@ -103,10 +106,18 @@ class Agent(T.nn.Module):
 
         return action, log_prob, aux_value, log_dist
 
-    def learn(self):
+    def learn(self, total_steps_done):
         """
         Trains the different networks on the collected trajectories
         """
+        with T.no_grad():
+            num_envs = self.config['num_envs']
+            final_states = self.trajectory.next_states[-num_envs:].to(
+                self.device)
+            last_state_vals = self.critic(final_states).squeeze().cpu()
+
+        self.trajectory.calc_advantages(self.config, last_state_vals)
+
         self.ppo_training_phase()
         self.steps += self.config['train_iterations']
 
@@ -114,10 +125,12 @@ class Agent(T.nn.Module):
             self.aux_training_phase()
             self.steps = 0
 
-        self.entropy_coeff *= self.config['entropy_decay']
+        self.entropy_coeff = max(self.entropy_coeff * self.config[
+            'entropy_decay'], self.config['entropy_min'])
+        self.log_training(total_steps_done)
 
-        log_entropy_coeff(self)
-        self.log_metrics()
+        self.forget()
+        self.save_model()
 
     def ppo_training_phase(self):
         """ Trains the actor network on the PPO Objective """
@@ -143,6 +156,11 @@ class Agent(T.nn.Module):
         """ Removes the collected data after training"""
         self.trajectory = Trajectory(self.config)
 
+    def append_to_replay_buffer(self, state, steps_done):
+        if self.config['is_pretrain']:
+            idx = get_idx(self, steps_done, replay_buffer=True)
+            self.replay_buffer[idx] = state
+
     def save_model(self):
         os.makedirs(self.path, exist_ok=True)
         PATH = self.path + '/agent_latest.pt'
@@ -151,6 +169,12 @@ class Agent(T.nn.Module):
     def load_model(self):
         PATH = self.path + '/agent_latest.pt'
         self.load_state_dict(T.load(PATH))
+
+    def log_training(self, total_steps_done):
+        log_ppo_env_steps(self, total_steps_done)
+        log_steps_done(self, total_steps_done)
+        log_entropy_coeff(self)
+        self.log_metrics()
 
     def log_metrics(self):
         if self.use_wandb:
