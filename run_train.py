@@ -10,7 +10,7 @@ if __name__ == '__main__':
               'val_coeff': 1e-2,
               'train_iterations': 1,
               'entropy_coeff': 0.01,
-              'entropy_min': 0.001,
+              'entropy_min': 0.01,
               'entropy_decay': 0.999,
               'grad_norm': 10,
               'grad_norm_ppg': 0.5,
@@ -40,7 +40,7 @@ if __name__ == '__main__':
     if config['is_pretrain']:
         config.update({
             'batch_size': 512,
-            'target_batch_size': 512,
+            'target_batch_size': 512
         })
 
     config.update({
