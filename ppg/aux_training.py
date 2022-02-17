@@ -40,7 +40,7 @@ def train_aux_batch(agent: T.nn.Module, states: T.tensor,
     config = agent.config
     action_logits, aux_values = agent.actor(states)
 
-    if T.isnan(action_logits).any():  # Necessary due to Torch bug
+    if T.isnan(action_logits).any():
         log_nan_aux(agent)
         return
 
@@ -56,7 +56,7 @@ def train_aux_batch(agent: T.nn.Module, states: T.tensor,
 
     aux_loss = aux_value_loss + kl_div * config['beta']
 
-    if config['kl_max'] is None or kl_div < config['kl_max']:
+    if config['kl_max_aux'] is None or kl_div < config['kl_max_aux']:
         # If KL divergence is too big we don't take gradient steps
         do_accumulated_gradient_step(agent.actor, agent.actor_opt, aux_loss,
                                      config, batch_idx, num_batches)

@@ -125,7 +125,8 @@ class Agent(T.nn.Module):
             self.aux_training_phase()
             self.steps = 0
 
-        self.entropy_coeff *= self.config['entropy_decay']
+        self.entropy_coeff = max(self.entropy_coeff * self.config[
+            'entropy_decay'], self.config['entropy_min'])
         self.log_training(total_steps_done)
 
         self.forget()
