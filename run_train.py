@@ -31,8 +31,8 @@ if __name__ == '__main__':
               'is_pretrain': False,
               'steps_before_repr_learning': 1600,  # Paper value
               'replay_buffer_size': 10000,
-              'num_envs': 2,  # Parallel Envs
-              'prefix': 'Atari_single_env'
+              'num_envs': 16,  # Parallel Envs
+              'prefix': 'Atari_ADV_FIX'
               }
 
     if config['is_pretrain']:
