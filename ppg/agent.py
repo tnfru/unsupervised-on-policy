@@ -114,7 +114,7 @@ class Agent(T.nn.Module):
             num_envs = self.config['num_envs']
             final_states = self.trajectory.next_states[-num_envs:].to(
                 self.device)
-            last_state_vals = self.critic(final_states).squeeze()
+            last_state_vals = self.critic(final_states).squeeze().cpu()
 
         self.trajectory.calc_advantages(self.config, last_state_vals)
 
