@@ -34,13 +34,14 @@ if __name__ == '__main__':
               'steps_before_repr_learning': 1600,  # Paper value
               'replay_buffer_size': 10000,
               'num_envs': 16,  # Parallel Envs
-              'prefix': 'PRETRAIN_ZERO_NOOP'
+              'prefix': 'PRETRAIN_LOW_LR'
               }
 
     if config['is_pretrain']:
         config.update({
             'batch_size': 512,
-            'target_batch_size': 512
+            'target_batch_size': 512,
+            'actor_lr': 1e-4,  # Paper val 1e-4 while pre-Training
         })
 
     config.update({
