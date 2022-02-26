@@ -30,11 +30,11 @@ if __name__ == '__main__':
               'temperature': 0.1,
               'frames_to_skip': 4,
               'stacked_frames': 4,
-              'is_pretrain': True,
+              'is_pretrain': False,
               'steps_before_repr_learning': 1600,  # Paper value
               'replay_buffer_size': 10000,
               'num_envs': 16,  # Parallel Envs
-              'prefix': 'PRETRAIN_LOW_LR'
+              'prefix': 'ATARI_AFTER_PRE'
               }
 
     if config['is_pretrain']:
@@ -53,6 +53,6 @@ if __name__ == '__main__':
 
     environment.seed_everything(SEED)
     env = environment.create_env(config)
-    agent = Agent(env, config=config, load=False, load_new_config=False)
+    agent = Agent(env, config=config, load=True, load_new_config=False)
 
     run_timesteps(agent, NUM_TIMESTEPS, pretrain=config['is_pretrain'])
