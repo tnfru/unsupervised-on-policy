@@ -28,8 +28,8 @@ def create_env(config: dict, name='MsPacman', render=None):
                    full_action_space=True,  # Use all actions
                    render_mode=render  # None | human | rgb_array
                    )
-
-    env = clip_reward_v0(env, lower_bound=-1, upper_bound=1)
+    if config['clip_reward']:
+        env = clip_reward_v0(env, lower_bound=-1, upper_bound=1)
     env = resize_v0(env, config['height'], config['width'], linear_interp=True)
     env = frame_stack_v1(env, config['stacked_frames'])
 

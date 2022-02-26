@@ -6,6 +6,7 @@ if __name__ == '__main__':
     config = {'policy_clip': 0.25,
               'kl_max': None,  # 0.05 used previously
               'kl_max_aux': 0.01,  # stability
+              'clip_reward': False,
               'beta': 1,
               'val_coeff': 1e-2,
               'train_iterations': 1,
