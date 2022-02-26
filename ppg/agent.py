@@ -167,6 +167,7 @@ class Agent(T.nn.Module):
         T.save(self.state_dict(), PATH)
 
     def load_model(self):
+        print('Loading Model...')
         PATH = self.path + '/agent_latest.pt'
         self.load_state_dict(T.load(PATH))
 
