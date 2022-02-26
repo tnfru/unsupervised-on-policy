@@ -3,8 +3,10 @@ from einops import rearrange
 
 
 def append_task_reward(agent, reward, idx):
+    normalization_factor = 10 if agent.config['reward_clip'] else 1
     if not agent.config['is_pretrain']:
-        agent.trajectory.rewards[idx] = T.from_numpy(reward).float()
+        agent.trajectory.rewards[idx] = T.from_numpy(
+            reward).float() / normalization_factor
 
 
 def is_repr_learn_phase(config, steps_done):

@@ -2,10 +2,8 @@ import gym
 import torch as T
 import numpy as np
 import random
-from supersuit import frame_stack_v1, resize_v0, clip_reward_v0, \
-    stable_baselines3_vec_env_v0
-from stable_baselines3.common.atari_wrappers import EpisodicLifeEnv, \
-    NoopResetEnv
+from supersuit import frame_stack_v1, resize_v0, stable_baselines3_vec_env_v0
+from stable_baselines3.common.atari_wrappers import EpisodicLifeEnv
 
 
 def create_env(config: dict, name='MsPacman', render=None):
@@ -28,8 +26,6 @@ def create_env(config: dict, name='MsPacman', render=None):
                    full_action_space=True,  # Use all actions
                    render_mode=render  # None | human | rgb_array
                    )
-    if config['clip_reward']:
-        env = clip_reward_v0(env, lower_bound=-1, upper_bound=1)
     env = resize_v0(env, config['height'], config['width'], linear_interp=True)
     env = frame_stack_v1(env, config['stacked_frames'])
 
