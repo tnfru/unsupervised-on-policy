@@ -11,7 +11,7 @@ if __name__ == '__main__':
               'val_coeff': 1e-2,
               'train_iterations': 1,
               'entropy_coeff': 0.01,
-              'entropy_min': 0.01,  # 0.005 alt
+              'entropy_min': 0.01,
               'entropy_decay': 0.9999,
               'grad_norm': 10,
               'grad_norm_ppg': 0.5,
@@ -35,7 +35,7 @@ if __name__ == '__main__':
               'steps_before_repr_learning': 1600,  # Paper value
               'replay_buffer_size': 10000,
               'num_envs': 16,  # Parallel Envs
-              'prefix': 'ATARI_AFTER_PRE'
+              'prefix': 'ATARI_NO_RW_CLIP'
               }
 
     if config['is_pretrain']:
@@ -56,6 +56,6 @@ if __name__ == '__main__':
 
     environment.seed_everything(SEED)
     env = environment.create_env(config)
-    agent = Agent(env, config=config, load=True, load_new_config=False)
+    agent = Agent(env, config=config, load=False, load_new_config=False)
 
     run_timesteps(agent, NUM_TIMESTEPS, pretrain=config['is_pretrain'])
