@@ -63,7 +63,7 @@ if __name__ == '__main__':
     # REINIT HEADS DUE TO REWARD SCALE
     agent.critic.head = nn.Sequential(nn.Linear(128, 1)).cuda()
     agent.actor.action_head = nn.Sequential(
-        f
+        nn.Linear(256, config['action_dim'])).cuda()
     agent.actor.val_head = nn.Sequential(nn.Linear(256, 1)).cuda()
 
     with T.no_grad():
