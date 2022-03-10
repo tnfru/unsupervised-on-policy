@@ -33,11 +33,11 @@ if __name__ == '__main__':
               'temperature': 0.1,
               'frames_to_skip': 4,
               'stacked_frames': 4,
-              'is_pretrain': False,
-              'steps_before_repr_learning': 1600,  # Paper value
+              'is_pretrain': True, # Set to false to use downstream task rewards
+              'steps_before_repr_learning': 1600, 
               'replay_buffer_size': 10000,
               'num_envs': 16,  # Parallel Envs
-              'prefix': 'ATARI_AFTER_PRE_HEAD_INIT'
+              'prefix': 'PRETRAIN_PACMAN'
               }
 
     if config['is_pretrain']:
@@ -58,17 +58,6 @@ if __name__ == '__main__':
 
     environment.seed_everything(SEED)
     env = environment.create_env(config)
-    agent = Agent(env, config=config, load=True, load_new_config=True)
-
-    # REINIT HEADS DUE TO REWARD SCALE
-    agent.critic.head = nn.Sequential(nn.Linear(128, 1)).cuda()
-    agent.actor.action_head = nn.Sequential(
-        nn.Linear(256, config['action_dim'])).cuda()
-    agent.actor.val_head = nn.Sequential(nn.Linear(256, 1)).cuda()
-
-    with T.no_grad():
-        # see https://arxiv.org/abs/2006.05990 network architecture
-        agent.actor.action_head[0].weight /= 100
-        agent.actor.val_head[0].weight /= 100
+    agent = Agent(env, config=config, load=False)
 
     run_timesteps(agent, NUM_TIMESTEPS, pretrain=config['is_pretrain'])
