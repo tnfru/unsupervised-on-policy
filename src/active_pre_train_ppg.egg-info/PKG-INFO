@@ -1,0 +1,30 @@
+Metadata-Version: 2.1
+Name: active-pre-train-ppg
+Version: 0.0.4
+Summary: Unsupervised pre-training with PPG
+Home-page: https://github.com/tnfru/unsupervised-on-policy
+Author: Lars Mueller
+Author-email: lamue120@hhu.de
+License: UNKNOWN
+Project-URL: Bug Tracker, https://github.com/tnfru/unsupervised-on-policy/issues
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+# Unsupervised On-Policy Reinforcement Learning
+
+This work combines [Active Pre-Training](https://arxiv.org/abs/2103.04551) with an On-Policy algorithm, [Phasic Policy Gradient](https://arxiv.org/abs/2009.04416).
+
+## Active Pre-Training
+
+Is used to pre-train a model free algorithm before defining a downstream task. It calculates the reward based on an estimatie of the particle based entropy of states. This reduces the training time if you want to define various tasks - i.e. robots for a warehouse. 
+
+## Phasic Policy Gradient
+
+Improved Version of Proximal Policy Optimization, which uses auxiliary epochs to train shared representations between the policy and a value network.
+
+

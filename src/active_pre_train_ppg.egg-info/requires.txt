@@ -1,0 +1,10 @@
+numpy
+torch
+matplotlib
+wandb
+ale-py
+gym[accept-rom-license,atari]>=0.21.0
+kornia
+supersuit
+stable_baselines3
+einops
