@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="unsupervised-on-policy",
-    version="0.1.1",
+    version="0.1.2",
     author="Lars Mueller",
     author_email="lamue120@hhu.de",
     description="Unsupervised pre-training with PPG",
