@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="active-pre-train-ppg",
-    version="0.0.4",
+    version="0.0.8",
     author="Lars Mueller",
     author_email="lamue120@hhu.de",
     description="Unsupervised pre-training with PPG",
@@ -20,7 +20,10 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    package_dir={"": "src"},
+    package_dir={"": ".",
+                 "utils":'unsupervised_on_policy/utils',
+                 "ppg":'unsupervised_on_policy/ppg',
+                 "pretrain":'unsupervised_on_policy/pretrain' },
     install_requires=[
         'numpy',
         'torch',
@@ -33,7 +36,8 @@ setuptools.setup(
         'stable_baselines3',
         'einops'
     ],
-    packages=setuptools.find_packages(where="src"),
+    packages=(setuptools.find_packages() +
+              setuptools.find_packages(where='unsupervised_on_policy')),
     python_requires=">=3.6",
 )
 

@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch as T
 from ppg.agent import Agent
-from rollout import run_timesteps
+from unsupervised_on_policy.rollout import run_timesteps
 import pretrain.environment as environment
 
 if __name__ == '__main__':
