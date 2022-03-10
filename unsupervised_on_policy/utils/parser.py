@@ -2,7 +2,7 @@ import argparse
 
 
 def parse_args(args):
-    parser = argparse.ArgumentParser(description='Start training script ...')
+    parser = argparse.ArgumentParser(description='Starting...')
 
     parser.add_argument('--load', dest="load",
                         help='If model is loaded or newly created.',
@@ -14,5 +14,8 @@ def parse_args(args):
     parser.set_defaults(load=False)
     parser.add_argument('--prefix', dest="prefix",
                         help='Prefix for the logging.', default='PRETRAIN')
+    parser.add_argument('--model_path',
+                        help='Path were model is saved and loaded from',
+                        default='./saved_models')
 
     return parser.parse_args(args)

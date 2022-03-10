@@ -41,7 +41,8 @@ def main():
               'replay_buffer_size': 10000,
               'is_pretrain': False if args.skip_pretrain else True,
               'num_envs': 16,
-              'prefix': args.prefix
+              'prefix': args.prefix,
+              'path': args.model_path
               }
 
     if config['is_pretrain']:

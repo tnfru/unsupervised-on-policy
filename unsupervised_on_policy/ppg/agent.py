@@ -62,7 +62,7 @@ class Agent(T.nn.Module):
         self.use_wandb = config['use_wandb']
         self.AUX_WARN_THRESHOLD = 100
         self.steps = 0
-        self.path = './saved_models'
+        self.path = config['path']
 
         if config['is_pretrain']:
             self.replay_buffer = T.zeros(config['replay_buffer_size'], config[
