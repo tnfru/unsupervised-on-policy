@@ -1,28 +1,32 @@
-import torch.nn as nn
-import torch as T
 from ppg.agent import Agent
 from unsupervised_on_policy.rollout import run_timesteps
 import pretrain.environment as environment
+from utils.parser import parse_args
+import sys
 
-if __name__ == '__main__':
+
+def main():
+    args = sys.argv[1:]
+    args = parse_args(args)
+
     config = {'policy_clip': 0.25,
-              'kl_max': None,  # 0.05 used previously
-              'kl_max_aux': None,  # stability in pretrain 0.01
+              'kl_max': None,
+              'kl_max_aux': None,
               'clip_reward': True,
               'beta': 1,
               'val_coeff': 1e-2,
               'train_iterations': 1,
               'entropy_coeff': 0.01,
-              'entropy_min': 0.01,  # 0.005 alt
+              'entropy_min': 0.01,
               'entropy_decay': 0.9999,
               'grad_norm': 10,
               'grad_norm_ppg': 0.5,
               'critic_lr': 1e-3,
-              'actor_lr': 3e-4,  # Paper val 1e-4 while pre-Training
+              'actor_lr': 3e-4,
               'aux_freq': 32,
               'aux_iterations': 3,
               'gae_lambda': 0.95,
-              'batch_size': 32,  # 512 while pretraining, 32 after
+              'batch_size': 32,
               'target_batch_size': 32,
               'use_wandb': True,
               'discount_factor': 0.99,
@@ -33,11 +37,11 @@ if __name__ == '__main__':
               'temperature': 0.1,
               'frames_to_skip': 4,
               'stacked_frames': 4,
-              'is_pretrain': True, # Set to false to use downstream task rewards
-              'steps_before_repr_learning': 1600, 
+              'steps_before_repr_learning': 1600,
               'replay_buffer_size': 10000,
-              'num_envs': 16,  # Parallel Envs
-              'prefix': 'PRETRAIN_PACMAN'
+              'is_pretrain': False if args.skip_pretrain else True,
+              'num_envs': 16,
+              'prefix': args.prefix
               }
 
     if config['is_pretrain']:
@@ -45,7 +49,7 @@ if __name__ == '__main__':
             'batch_size': 512,
             'target_batch_size': 512,
             'entropy_min': 0.01,
-            'actor_lr': 1e-4,  # Paper val 1e-4 while pre-Training
+            'actor_lr': 1e-4,
             'kl_max_aux': 0.01,  # stability in pretrain
         })
 
@@ -58,6 +62,10 @@ if __name__ == '__main__':
 
     environment.seed_everything(SEED)
     env = environment.create_env(config)
-    agent = Agent(env, config=config, load=False)
+    agent = Agent(env, config=config, load=args.load)
 
     run_timesteps(agent, NUM_TIMESTEPS, pretrain=config['is_pretrain'])
+
+
+if __name__ == '__main__':
+    main()

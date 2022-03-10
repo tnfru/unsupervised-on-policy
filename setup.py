@@ -4,8 +4,8 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="active-pre-train-ppg",
-    version="0.0.8",
+    name="unsupervised-on-policy",
+    version="0.1.1",
     author="Lars Mueller",
     author_email="lamue120@hhu.de",
     description="Unsupervised pre-training with PPG",

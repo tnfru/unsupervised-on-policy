@@ -170,6 +170,7 @@ class Agent(T.nn.Module):
         print('Loading Model...')
         PATH = self.path + '/agent_latest.pt'
         self.load_state_dict(T.load(PATH))
+        print('Model loaded. Starting training.')
 
     def log_training(self, total_steps_done):
         log_ppo_env_steps(self, total_steps_done)
