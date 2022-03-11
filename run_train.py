@@ -3,7 +3,7 @@ from rollout import run_timesteps
 import pretrain.environment as environment
 
 if __name__ == '__main__':
-    config = {'policy_clip': 0.25,
+    config = {'policy_clip': 0.1,
               'kl_max': None,  # 0.05 used previously
               'kl_max_aux': None,  # stability in pretrain 0.01
               'clip_reward': True,
