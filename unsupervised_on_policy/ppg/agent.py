@@ -62,7 +62,7 @@ class Agent(T.nn.Module):
         self.use_wandb = config['use_wandb']
         self.AUX_WARN_THRESHOLD = 100
         self.steps = 0
-        self.path = './saved_models'
+        self.path = config['path']
 
         if config['is_pretrain']:
             self.replay_buffer = T.zeros(config['replay_buffer_size'], config[
@@ -167,8 +167,10 @@ class Agent(T.nn.Module):
         T.save(self.state_dict(), PATH)
 
     def load_model(self):
+        print('Loading Model...')
         PATH = self.path + '/agent_latest.pt'
         self.load_state_dict(T.load(PATH))
+        print('Model loaded. Starting training.')
 
     def log_training(self, total_steps_done):
         log_ppo_env_steps(self, total_steps_done)
